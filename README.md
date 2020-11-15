@@ -1,6 +1,6 @@
 # soundcloud-api
 
-A SoundCloud v2 API wrapper designed.
+A SoundCloud v2 API wrapper.
 
 # Quick Start
 
