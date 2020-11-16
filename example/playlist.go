@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/zackradisic/soundcloud-api/pkg/soundcloudapi"
+	soundcloudapi "github.com/zackradisic/soundcloud-api"
 )
 
 func main() {
