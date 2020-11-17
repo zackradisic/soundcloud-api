@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	soundcloudapi "github.com/zackradisic/soundcloud-api"
@@ -19,8 +20,23 @@ func main() {
 
 	fmt.Println(sc.ClientID())
 
-	_, err = sc.GetPlaylistInfo("kdfgksdhkljhgls")
+	tracks, err := sc.GetTrackInfo(soundcloudapi.GetTrackInfoOptions{
+		URL: "sdfkljsdflkj",
+	})
 
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	fmt.Println("Track title: " + tracks[0].Title)
+
+	out, err := os.Create("output.mp3")
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	defer out.Close()
+	err = sc.DownloadTrack(tracks[0].Media.Transcodings[0], out)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
