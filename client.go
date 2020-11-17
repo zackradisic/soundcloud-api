@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/grafov/m3u8"
 	"github.com/pkg/errors"
 )
 
@@ -130,6 +132,12 @@ func (c *client) getTrackInfo(options GetTrackInfoOptions) ([]Track, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		err = json.Unmarshal(data, &trackInfo)
+
+		if err != nil {
+			return nil, errors.Wrap(err, "JSON is not valid track info")
+		}
 	} else if options.URL != "" {
 		// TO-DO: Validate the URL
 		data, err = c.resolve(options.URL)
@@ -137,15 +145,14 @@ func (c *client) getTrackInfo(options GetTrackInfoOptions) ([]Track, error) {
 			return nil, err
 		}
 
-		err = json.Unmarshal(data, &trackInfo)
+		trackSingle := Track{}
+		err = json.Unmarshal(data, &trackSingle)
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to unmarshal track JSON data")
+		}
+		trackInfo = []Track{trackSingle}
 	} else {
 		return nil, errors.New("Invalid options. URL or ID must be provided")
-	}
-
-	err = json.Unmarshal(data, &trackInfo)
-
-	if err != nil {
-		return nil, errors.Wrap(err, "JSON is not valid track info")
 	}
 
 	if options.ID != nil && len(options.ID) > 0 {
@@ -172,6 +179,168 @@ func (c *client) sortTrackInfo(ids []int64, tracks []Track) {
 			}
 		}
 	}
+}
+
+func (c *client) getMediaURL(url string) (string, error) {
+	u, err := c.buildURL(url, true)
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to build URL for getMediaURL")
+	}
+
+	media := &MediaURLResponse{}
+	data, err := c.makeRequest("GET", u, nil)
+	if err != nil {
+		return "", err
+	}
+
+	err = json.Unmarshal(data, media)
+	if err != nil {
+		return "", errors.Wrap(err, "Failed unmarshal JSON response in getMediaURL")
+	}
+
+	return media.URL, nil
+}
+
+func (c *client) downloadProgressive(url string, dst io.Writer) error {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return errors.Wrap(err, "Failed to make request")
+	}
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		if data, err := ioutil.ReadAll(res.Body); err == nil {
+			return &failedRequestError{status: res.StatusCode, errMsg: string(data)}
+		}
+		return &failedRequestError{status: res.StatusCode}
+	}
+
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		if data, err := ioutil.ReadAll(res.Body); err == nil {
+			return &failedRequestError{status: res.StatusCode, errMsg: string(data)}
+		}
+		return &failedRequestError{status: res.StatusCode}
+	}
+
+	_, err = io.Copy(dst, res.Body)
+	if err != nil {
+		return errors.Wrap(err, "downloadProgressive() failed")
+	}
+
+	return nil
+}
+
+func (c *client) downloadHLS(url string, dst io.Writer) error {
+	m3u8Raw, err := c.makeRequest("GET", url, nil)
+	if err != nil {
+		return errors.Wrap(err, "Failed to get m3u8 data")
+	}
+
+	buf := bytes.NewBuffer(m3u8Raw)
+	playlist, listType, err := m3u8.Decode(*buf, true)
+	if err != nil {
+		return errors.Wrap(err, "Failed to decode m3u8 playlist")
+	}
+
+	if mediaPlaylist, ok := playlist.(*m3u8.MediaPlaylist); ok && listType == m3u8.MEDIA {
+		err = c.downloadHLSAll(mediaPlaylist.Segments, dst)
+		return err
+	}
+
+	return errors.New("m3u8 playlist is not a media playlist")
+}
+
+func (c *client) downloadHLSAll(segments []*m3u8.MediaSegment, dst io.Writer) error {
+	// Downloads all HLS segments concurrently and stores in memory until
+	// all goroutines are complete, then writes to dst.
+	//
+	// This is okay for small files, but we should create a separate function
+	// that employs some memory efficient algorithm for larger files.
+	downloadedSegments := make([][]byte, len(segments))
+
+	type result struct {
+		Index int
+		Data  []byte
+	}
+
+	count := 0
+
+	for _, segment := range segments {
+		if segment != nil {
+			count++
+		}
+	}
+
+	resultChan := make(chan *result, count)
+	errChan := make(chan error)
+
+	for i, segment := range segments {
+
+		if segment == nil {
+			continue
+		}
+		index := i
+		uri := segment.URI
+		go func() {
+			data, err := c.downloadHLSSegment(uri)
+			if err != nil {
+				errChan <- err
+				return
+			}
+			resultChan <- &result{
+				Index: index,
+				Data:  data,
+			}
+		}()
+	}
+
+	complete := 0
+	for {
+		select {
+		case err := <-errChan:
+			return errors.Wrap(err, "Failed to download HLS track")
+		case r := <-resultChan:
+			downloadedSegments[r.Index] = r.Data
+			complete++
+		}
+
+		if complete == count {
+			break
+		}
+	}
+
+	for _, data := range downloadedSegments {
+		_, err := dst.Write(data)
+		if err != nil {
+			return errors.Wrap(err, "Failed to write HLS segments to dst")
+		}
+	}
+
+	return nil
+}
+
+func (c *client) downloadHLSSegment(url string) ([]byte, error) {
+	res, err := http.Get(url)
+	if err != nil {
+		if data, err := ioutil.ReadAll(res.Body); err == nil {
+			return nil, &failedRequestError{status: res.StatusCode, errMsg: string(data)}
+		}
+		return nil, &failedRequestError{status: res.StatusCode}
+	}
+
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		if data, err := ioutil.ReadAll(res.Body); err == nil {
+			return nil, &failedRequestError{status: res.StatusCode, errMsg: string(data)}
+		}
+		return nil, &failedRequestError{status: res.StatusCode}
+	}
+
+	data, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to read HLS segment data")
+	}
+
+	return data, nil
 }
 
 func (c *client) getPlaylistInfo(url string) (Playlist, error) {

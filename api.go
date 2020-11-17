@@ -104,3 +104,8 @@ type User struct {
 	URI             string `json:"uri"`
 	Username        string `json:"username"`
 }
+
+// MediaURLResponse is the JSON response of retrieving media information of a track
+type MediaURLResponse struct {
+	URL string `json:"url"`
+}

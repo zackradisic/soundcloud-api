@@ -1,6 +1,9 @@
 package soundcloudapi
 
 import (
+	"io"
+	"strings"
+
 	"github.com/pkg/errors"
 )
 
@@ -47,4 +50,21 @@ func (sc *SoundCloudAPI) GetTrackInfo(options GetTrackInfoOptions) ([]Track, err
 // GetPlaylistInfo returns the info for a playlist
 func (sc *SoundCloudAPI) GetPlaylistInfo(url string) (Playlist, error) {
 	return sc.client.getPlaylistInfo(url)
+}
+
+// DownloadTrack downloads the track specified by the given Transcoding's URL to dst
+func (sc *SoundCloudAPI) DownloadTrack(transcoding Transcoding, dst io.Writer) error {
+	u, err := sc.client.getMediaURL(transcoding.URL)
+	if err != nil {
+		return err
+	}
+	if strings.Contains(transcoding.URL, "progressive") {
+		// Progressive download
+		err = sc.client.downloadProgressive(u, dst)
+	} else {
+		// HLS download
+		err = sc.client.downloadHLS(u, dst)
+	}
+
+	return err
 }
