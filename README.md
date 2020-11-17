@@ -1,6 +1,4 @@
-# soundcloud-api
-
-A SoundCloud v2 API wrapper.
+![soundcloud-api](https://socialify.git.ci/zackradisic/soundcloud-api/image?description=1&language=1&owner=1&pattern=Plus&stargazers=1&theme=Dark)
 
 # Quick Start
 
