@@ -2,7 +2,7 @@
 
 [![GoDoc](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go)](https://pkg.go.dev/github.com/zackradisic/soundcloud-api)
 
-SoundCloud's v2 API reverse engineered for Go.
+### SoundCloud's v2 API reverse engineered for Go.
 
 
 # Notice
