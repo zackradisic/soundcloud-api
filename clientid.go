@@ -36,9 +36,12 @@ func FetchClientID() (string, error) {
 	}
 
 	bodyString := string(body)
+	// The link to the JS file with the client ID looks like this:
+	// <script crossorigin src="https://a-v2.sndcdn.com/assets/sdfhkjhsdkf.js"></script
 	split := strings.Split(bodyString, `<script crossorigin src="`)
 	urls := []string{}
 
+	// Extract all the URLS that match our pattern
 	for _, raw := range split {
 		u := strings.Replace(raw, `"></script>`, "", 1)
 		u = strings.Split(u, "\n")[0]
@@ -47,6 +50,8 @@ func FetchClientID() (string, error) {
 		}
 	}
 
+	// It seems like our desired URL is always imported last,
+	// so we use urls[len(urls) - 1]
 	resp, err = http.Get(urls[len(urls)-1])
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to fetch SoundCloud Client ID")
@@ -59,6 +64,7 @@ func FetchClientID() (string, error) {
 
 	bodyString = string(body)
 
+	// Extract the client ID
 	if strings.Contains(bodyString, `,client_id:"`) {
 		clientID := strings.Split(bodyString, `,client_id:"`)[1]
 		clientID = strings.Split(clientID, `"`)[0]

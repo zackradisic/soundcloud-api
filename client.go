@@ -156,6 +156,8 @@ func (c *client) getTrackInfo(options GetTrackInfoOptions) ([]Track, error) {
 	}
 
 	if options.ID != nil && len(options.ID) > 0 {
+		// For some reason the track URL returns the tracks out of order,
+		// so we need to sort the response to maintain consistency
 		c.sortTrackInfo(options.ID, trackInfo)
 	}
 
@@ -182,6 +184,7 @@ func (c *client) sortTrackInfo(ids []int64, tracks []Track) {
 }
 
 func (c *client) getMediaURL(url string) (string, error) {
+	// The media URL is the actual link to the audio file for the track
 	u, err := c.buildURL(url, true)
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to build URL for getMediaURL")
@@ -202,6 +205,7 @@ func (c *client) getMediaURL(url string) (string, error) {
 }
 
 func (c *client) downloadProgressive(url string, dst io.Writer) error {
+	// The track audio file is just a regular audio file that can be downloaded
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return errors.Wrap(err, "Failed to make request")
@@ -231,6 +235,7 @@ func (c *client) downloadProgressive(url string, dst io.Writer) error {
 }
 
 func (c *client) downloadHLS(url string, dst io.Writer) error {
+	// The audio for the track is streamed as per the HLS protocol, see: https://en.wikipedia.org/wiki/HTTP_Live_Streaming
 	m3u8Raw, err := c.makeRequest("GET", url, nil)
 	if err != nil {
 		return errors.Wrap(err, "Failed to get m3u8 data")
@@ -271,6 +276,15 @@ func (c *client) downloadHLSAll(segments []*m3u8.MediaSegment, dst io.Writer) er
 		}
 	}
 
+	// Should we use channels here?
+	//
+	// According to: https://github.com/golang/go/wiki/MutexOrChannel,
+	// we are using channels for the right reason. But maybe it's not efficient
+	// to pass each audio segment from goroutine -> channel -> downloadedSegments slice
+	//
+	// Segment size seems to range from ~30kb <---> ~180kb,
+	// if we use sync.Mutex and add the segments directly to the downloadSegments slice would it be
+	// more memory efficient here?
 	resultChan := make(chan *result, count)
 	errChan := make(chan error)
 
@@ -362,6 +376,8 @@ func (c *client) getPlaylistInfo(url string) (Playlist, error) {
 	}
 
 	if playlist.TrackCount > 5 {
+		// SoundCloud provides info for the first 5 tracks,
+		// the rest must be retrieved.
 		ids := make([]int64, playlist.TrackCount-5)
 
 		count := 0
@@ -373,9 +389,8 @@ func (c *client) getPlaylistInfo(url string) (Playlist, error) {
 		playlist.Tracks = playlist.Tracks[:5]
 
 		if len(ids) > 50 {
-			// The SoundCloud API limits querying tracks to 50 at a time.
-			//
-			// Split the requests.
+			// The SoundCloud API limits querying tracks to 50 at a time,
+			// so we have to split the requests.
 
 			temp := make([]Track, len(ids))
 			playlist.Tracks = append(playlist.Tracks, temp...)
@@ -458,7 +473,7 @@ func (c *client) getPlaylistInfo(url string) (Playlist, error) {
 }
 
 func (c *client) resolve(url string) ([]byte, error) {
-
+	// Resolve is a handy API endpoint that returns info for the given resource
 	u, err := c.buildURL(resolveURL, true, "url", url)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to build URL for resolve()")
