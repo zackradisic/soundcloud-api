@@ -42,7 +42,10 @@ func (sc *SoundCloudAPI) ClientID() string {
 // GetTrackInfo returns the info for the track given tracks
 //
 // If URL is supplied, it will return the info for a single track given by that url.
-// If an array of ids is supplied, it will return an array of track info
+// If an array of ids is supplied, it will return an array of track info.
+//
+// WARNING: Private tracks will not be fetched unless options.PlaylistID and options.PlaylistSecretToken
+// are provided.
 func (sc *SoundCloudAPI) GetTrackInfo(options GetTrackInfoOptions) ([]Track, error) {
 	return sc.client.getTrackInfo(options)
 }

@@ -106,10 +106,13 @@ func (c *client) buildURL(base string, clientID bool, query ...string) (string, 
 	return u.String(), nil
 }
 
-// GetTrackInfoOptions can contain URL of the track or the ID of the track
+// GetTrackInfoOptions can contain the URL of the track or the ID of the track.
+// PlaylistID and PlaylistSecretToken are necessary to retrieve private tracks in private playlists.
 type GetTrackInfoOptions struct {
-	URL string
-	ID  []int64
+	URL                 string
+	ID                  []int64
+	PlaylistID          int64
+	PlaylistSecretToken string
 }
 
 func (c *client) getTrackInfo(options GetTrackInfoOptions) ([]Track, error) {
@@ -123,7 +126,12 @@ func (c *client) getTrackInfo(options GetTrackInfoOptions) ([]Track, error) {
 		for _, id := range options.ID {
 			ids = append(ids, strconv.FormatInt(id, 10))
 		}
-		u, err = c.buildURL(trackURL, true, "ids", strings.Join(ids, ","))
+
+		if options.PlaylistID == 0 && options.PlaylistSecretToken == "" {
+			u, err = c.buildURL(trackURL, true, "ids", strings.Join(ids, ","))
+		} else {
+			u, err = c.buildURL(trackURL, true, "ids", strings.Join(ids, ","), "playlistId", fmt.Sprintf("%d", options.PlaylistID), "playlistSecretToken", options.PlaylistSecretToken)
+		}
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build URL for getTrackInfo()")
 		}
@@ -158,7 +166,22 @@ func (c *client) getTrackInfo(options GetTrackInfoOptions) ([]Track, error) {
 	if options.ID != nil && len(options.ID) > 0 {
 		// For some reason the track URL returns the tracks out of order,
 		// so we need to sort the response to maintain consistency
-		c.sortTrackInfo(options.ID, trackInfo)
+
+		// Private tracks will not be fetched if options.PlaylistID and options.PlaylistSecretToken
+		// are not provided, so we need to update the IDs slice before we sort
+
+		trimmedIDs := []int64{}
+		trackInfoIDs := []int64{}
+		for _, track := range trackInfo {
+			trackInfoIDs = append(trackInfoIDs, track.ID)
+		}
+
+		for _, id := range options.ID {
+			if sliceContains(trackInfoIDs, id) {
+				trimmedIDs = append(trimmedIDs, id)
+			}
+		}
+		c.sortTrackInfo(trimmedIDs, trackInfo)
 	}
 
 	return trackInfo, nil
@@ -169,6 +192,7 @@ func (c *client) sortTrackInfo(ids []int64, tracks []Track) {
 	//
 	// Because the API request in getTrackInfo is limited to 50 tracks at once
 	// time complexity will always be <= O(50^2)
+
 	for j, id := range ids {
 
 		if tracks[j].ID != id {
@@ -375,6 +399,8 @@ func (c *client) getPlaylistInfo(url string) (Playlist, error) {
 		return playlist, errors.Wrap(err, "Returned JSON is not valid track info")
 	}
 
+	playlistID := playlist.ID
+	playlistSecretToken := playlist.SecretToken
 	if playlist.TrackCount > 5 {
 		// SoundCloud provides info for the first 5 tracks,
 		// the rest must be retrieved.
@@ -412,7 +438,9 @@ func (c *client) getPlaylistInfo(url string) (Playlist, error) {
 				}
 				go func() {
 					trackInfo, err := c.getTrackInfo(GetTrackInfoOptions{
-						ID: ids[start:end],
+						ID:                  ids[start:end],
+						PlaylistID:          playlistID,
+						PlaylistSecretToken: playlistSecretToken,
 					})
 
 					if err != nil {
@@ -454,7 +482,9 @@ func (c *client) getPlaylistInfo(url string) (Playlist, error) {
 
 		} else {
 			trackInfo, err := c.getTrackInfo(GetTrackInfoOptions{
-				ID: ids,
+				ID:                  ids,
+				PlaylistID:          playlistID,
+				PlaylistSecretToken: playlistSecretToken,
 			})
 
 			if err != nil {
