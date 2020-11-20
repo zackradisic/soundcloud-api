@@ -19,7 +19,7 @@ func main() {
 
 	fmt.Println(sc.ClientID())
 
-	playlist, err := sc.GetPlaylistInfo("kdfgksdhkljhgls")
+	playlist, err := sc.GetPlaylistInfo("https://soundcloud.com/sdlfjsdfl")
 
 	if err != nil {
 		log.Fatal(err.Error())
@@ -30,4 +30,9 @@ func main() {
 	fmt.Printf("Elapsed: %f\n", elapsed)
 
 	fmt.Println("Playlist title: " + playlist.Title)
+	fmt.Printf("Playlist length: %d\n", len(playlist.Tracks))
+
+	for i, track := range playlist.Tracks {
+		fmt.Printf("%d. %s : %d\n", i+1, track.Title, track.ID)
+	}
 }
