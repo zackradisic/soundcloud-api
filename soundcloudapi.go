@@ -47,6 +47,12 @@ func (sc *SoundCloudAPI) ClientID() string {
 // WARNING: Private tracks will not be fetched unless options.PlaylistID and options.PlaylistSecretToken
 // are provided.
 func (sc *SoundCloudAPI) GetTrackInfo(options GetTrackInfoOptions) ([]Track, error) {
+	if options.URL != "" {
+		id := ExtractIDFromPersonalizedTrackURL(options.URL)
+		if id != -1 {
+			return sc.client.getTrackInfo(GetTrackInfoOptions{ID: []int64{id}})
+		}
+	}
 	return sc.client.getTrackInfo(options)
 }
 
