@@ -90,6 +90,7 @@ type Playlist struct {
 
 // User represents the JSON payload for user data
 type User struct {
+	ID              int64  `json:"id"`
 	AvatarURL       string `json:"avatar_url"`
 	City            string `json:"city"`
 	CommentsCount   int64  `json:"comments_count"`
@@ -108,4 +109,27 @@ type User struct {
 // MediaURLResponse is the JSON response of retrieving media information of a track
 type MediaURLResponse struct {
 	URL string `json:"url"`
+}
+
+// PaginatedQuery is the JSON response for a paginated query
+type PaginatedQuery struct {
+	Collection   []interface{} `json:"collection"`
+	TotalResults int           `json:"total_results"`
+	NextHref     string        `json:"next_href"`
+	QueryURN     string        `json:"query_urn"`
+}
+
+// PaginatedLikeQuery is the JSON response for a paginated query for tracks
+type PaginatedLikeQuery struct {
+	Collection   []Like `json:"collection"`
+	TotalResults int    `json:"total_results"`
+	NextHref     string `json:"next_href"`
+	QueryURN     string `json:"query_urn"`
+}
+
+// Like is the JSON response for a like
+type Like struct {
+	CreatedAt string `json:"created_at"`
+	Kind      string `json:"kind"`
+	Track     Track  `json:"track"`
 }

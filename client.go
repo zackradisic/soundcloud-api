@@ -27,6 +27,7 @@ type failedRequestError struct {
 
 const trackURL = "https://api-v2.soundcloud.com/tracks"
 const resolveURL = "https://api-v2.soundcloud.com/resolve"
+const usersURL = "https://api-v2.soundcloud.com/users/"
 
 func (f *failedRequestError) Error() string {
 	if f.errMsg == "" {
@@ -497,7 +498,10 @@ func (c *client) getPlaylistInfo(url string) (Playlist, error) {
 		}
 	}
 
-	data, err = json.Marshal(playlist)
+	data, err = json.Marshal(&playlist)
+	if err != nil {
+		return playlist, errors.Wrap(err, "Failed to get playlist data")
+	}
 
 	return playlist, nil
 }
@@ -515,4 +519,88 @@ func (c *client) resolve(url string) ([]byte, error) {
 	}
 
 	return data, nil
+}
+
+// GetUserOptions contains either the profile url of the user or the ID of the user
+type GetUserOptions struct {
+	ProfileURL string
+	ID         int64
+}
+
+func (c *client) getUser(options GetUserOptions) (User, error) {
+	var user User
+	var u string
+	var err error
+
+	if options.ProfileURL != "" {
+		u, err = c.buildURL(resolveURL, true, "url", options.ProfileURL)
+	} else if options.ID != 0 {
+		u, err = c.buildURL(usersURL+strconv.FormatInt(options.ID, 10), true)
+	} else {
+		return user, errors.New("One of options.ProfileURL or options.ID is required")
+	}
+
+	if err != nil {
+		return user, errors.Wrap(err, "Failed to build URL for getUser()")
+	}
+
+	data, err := c.makeRequest("GET", u, nil)
+	if err != nil {
+		return user, errors.Wrap(err, "Failed to get user")
+	}
+
+	err = json.Unmarshal(data, &user)
+	if err != nil {
+		return user, errors.Wrap(err, "Failed to get user")
+	}
+
+	return user, nil
+}
+
+// GetLikesOptions are the options for getting a user's likes.
+type GetLikesOptions struct {
+	ProfileURL string // URL to the user's profile (will use this or ID to choose user)
+	ID         int64  //  User's ID if you have it
+	Limit      int    // How many tracks to return (defaults to 10)
+	Offset     int    // How many tracks to offset by (used for pagination; defaults to 0)
+}
+
+func (c *client) getLikes(options GetLikesOptions) (*PaginatedLikeQuery, error) {
+	var query PaginatedLikeQuery
+	var u string // URL takes the form: https://api-v2.soundcloud.com/users/<id>/likes
+	var err error
+
+	if options.ProfileURL != "" {
+		user, err := c.getUser(GetUserOptions{ProfileURL: options.ProfileURL})
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to get user to retrieve likes")
+		}
+
+		options.ID = user.ID
+	} else if options.ID == 0 {
+		return nil, errors.New("One of options.ProfileURL or options.ID is required")
+	}
+
+	if options.Limit == 0 {
+		options.Limit = 10
+	}
+
+	if options.Offset == 0 {
+		options.Offset = 0
+	}
+
+	u, err = c.buildURL(usersURL+strconv.FormatInt(options.ID, 10)+"/likes", true, "limit", strconv.Itoa(options.Limit), "offset", strconv.Itoa(options.Offset))
+
+	data, err := c.makeRequest("GET", u, nil)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to get likes")
+	}
+
+	err = json.Unmarshal(data, &query)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to unmarshal received likes data")
+	}
+
+	return &query, nil
 }

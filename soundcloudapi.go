@@ -77,3 +77,8 @@ func (sc *SoundCloudAPI) DownloadTrack(transcoding Transcoding, dst io.Writer) e
 
 	return err
 }
+
+// GetLikes returns a PaginatedQuery with the Collection field member as a list of tracks
+func (sc *SoundCloudAPI) GetLikes(options GetLikesOptions) (*PaginatedLikeQuery, error) {
+	return sc.client.getLikes(options)
+}
