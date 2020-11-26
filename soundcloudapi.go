@@ -12,10 +12,10 @@ type SoundCloudAPI struct {
 	client *client
 }
 
-// NewSoundCloudAPI returns a pointer to a SoundCloud API struct.
+// New returns a pointer to a new SoundCloud API struct.
 //
 // clientID is optional and a new one will be fetched if not provided
-func NewSoundCloudAPI(clientID string) (*SoundCloudAPI, error) {
+func New(clientID string) (*SoundCloudAPI, error) {
 	if clientID == "" {
 		var err error
 		clientID, err = FetchClientID()
