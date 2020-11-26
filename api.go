@@ -64,7 +64,7 @@ type Playlist struct {
 	EmbeddeableBy  string  `json:"embeddable_by"`
 	Genre          string  `json:"genre"`
 	ID             int64   `json:"id"`
-	Kind           string  `json:"playlist"`
+	Kind           string  `json:"kind"`
 	LabelName      string  `json:"label_name"`
 	LastModified   string  `json:"last_modified"`
 	License        string  `json:"license"`
