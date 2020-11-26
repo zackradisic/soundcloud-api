@@ -7,15 +7,15 @@ import (
 	"github.com/pkg/errors"
 )
 
-// SoundCloudAPI is a wrapper for the SoundCloud private API used internally for soundcloud.com
-type SoundCloudAPI struct {
+// API is a wrapper for the SoundCloud private API used internally for soundcloud.com
+type API struct {
 	client *client
 }
 
 // New returns a pointer to a new SoundCloud API struct.
 //
 // clientID is optional and a new one will be fetched if not provided
-func New(clientID string) (*SoundCloudAPI, error) {
+func New(clientID string) (*API, error) {
 	if clientID == "" {
 		var err error
 		clientID, err = FetchClientID()
@@ -24,18 +24,18 @@ func New(clientID string) (*SoundCloudAPI, error) {
 		}
 	}
 
-	return &SoundCloudAPI{
+	return &API{
 		client: newClient(clientID),
 	}, nil
 }
 
 // SetClientID sets the client ID
-func (sc *SoundCloudAPI) SetClientID(clientID string) {
+func (sc *API) SetClientID(clientID string) {
 	sc.client.clientID = clientID
 }
 
 // ClientID returns the client ID
-func (sc *SoundCloudAPI) ClientID() string {
+func (sc *API) ClientID() string {
 	return sc.client.clientID
 }
 
@@ -46,7 +46,7 @@ func (sc *SoundCloudAPI) ClientID() string {
 //
 // WARNING: Private tracks will not be fetched unless options.PlaylistID and options.PlaylistSecretToken
 // are provided.
-func (sc *SoundCloudAPI) GetTrackInfo(options GetTrackInfoOptions) ([]Track, error) {
+func (sc *API) GetTrackInfo(options GetTrackInfoOptions) ([]Track, error) {
 	if options.URL != "" {
 		id := ExtractIDFromPersonalizedTrackURL(options.URL)
 		if id != -1 {
@@ -57,12 +57,12 @@ func (sc *SoundCloudAPI) GetTrackInfo(options GetTrackInfoOptions) ([]Track, err
 }
 
 // GetPlaylistInfo returns the info for a playlist
-func (sc *SoundCloudAPI) GetPlaylistInfo(url string) (Playlist, error) {
+func (sc *API) GetPlaylistInfo(url string) (Playlist, error) {
 	return sc.client.getPlaylistInfo(url)
 }
 
 // DownloadTrack downloads the track specified by the given Transcoding's URL to dst
-func (sc *SoundCloudAPI) DownloadTrack(transcoding Transcoding, dst io.Writer) error {
+func (sc *API) DownloadTrack(transcoding Transcoding, dst io.Writer) error {
 	u, err := sc.client.getMediaURL(transcoding.URL)
 	if err != nil {
 		return err
@@ -79,6 +79,6 @@ func (sc *SoundCloudAPI) DownloadTrack(transcoding Transcoding, dst io.Writer) e
 }
 
 // GetLikes returns a PaginatedQuery with the Collection field member as a list of tracks
-func (sc *SoundCloudAPI) GetLikes(options GetLikesOptions) (*PaginatedLikeQuery, error) {
+func (sc *API) GetLikes(options GetLikesOptions) (*PaginatedLikeQuery, error) {
 	return sc.client.getLikes(options)
 }
