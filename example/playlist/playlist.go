@@ -11,7 +11,7 @@ import (
 func main() {
 	start := time.Now().UnixNano() / int64(time.Millisecond)
 	fmt.Println(start)
-	sc, err := soundcloudapi.NewSoundCloudAPI("")
+	sc, err := soundcloudapi.New("")
 
 	if err != nil {
 		log.Fatal(err.Error())

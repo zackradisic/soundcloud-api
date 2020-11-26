@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	sc, err := soundcloudapi.NewSoundCloudAPI("")
+	sc, err := soundcloudapi.New("")
 
 	if err != nil {
 		log.Fatal(err.Error())

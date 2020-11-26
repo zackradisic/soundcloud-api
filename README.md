@@ -15,7 +15,7 @@ SoundCloud is currently [not](https://docs.google.com/forms/d/e/1FAIpQLSfNxc82RJ
 ```go
 // You can pass in a client ID if you want to, 
 // if not the package will fetch one for you
-sc, err := soundcloudapi.NewSoundCloudAPI("") 
+sc, err := soundcloudapi.New("") 
 
 if err != nil {
     log.Fatal(err.Error())
