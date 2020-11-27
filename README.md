@@ -22,8 +22,25 @@ if err != nil {
 }
 
 track, err := sc.GetTrackInfo(soundcloudapi.GetTrackInfoOptions{
-		URL: "https://soundcloud.com/track/infsdfo",
+    URL: "https://soundcloud.com/track/infsdfo",
 })
 ```
 
 See the [docs](https://pkg.go.dev/github.com/zackradisic/soundcloud-api) for more reference.
+
+# Error Handling
+If an error is returned from SoundCloud's API, it will take the form of the FailedRequestError struct. You can use type
+assertions to access the status code or JSON error msg for your use case. Ex:
+
+```go
+tracks, err := sc.GetTrackInfo(soundcloudapi.GetTrackInfoOptions{
+    URL: "https://soundcloud.com/asdkfjhalsdhfl",
+})
+
+if failedRequest, ok := err.(*soundcloudapi.FailedRequestError); ok {
+    if failedRequest.Status == 404 {
+        fmt.Println("Could not find that track")
+    }
+    return
+}
+```
