@@ -20,21 +20,22 @@ type client struct {
 	clientID   string
 }
 
-type failedRequestError struct {
-	status int
-	errMsg string
+// FailedRequestError is an error response from the SoundCloud API
+type FailedRequestError struct {
+	Status int
+	ErrMsg string
 }
 
 const trackURL = "https://api-v2.soundcloud.com/tracks"
 const resolveURL = "https://api-v2.soundcloud.com/resolve"
 const usersURL = "https://api-v2.soundcloud.com/users/"
 
-func (f *failedRequestError) Error() string {
-	if f.errMsg == "" {
-		return fmt.Sprintf("Request returned non 2xx status: %d", f.status)
+func (f *FailedRequestError) Error() string {
+	if f.ErrMsg == "" {
+		return fmt.Sprintf("Request returned non 2xx Status: %d", f.Status)
 	}
 
-	return fmt.Sprintf("Request failed with status %d: %s", f.status, f.errMsg)
+	return fmt.Sprintf("Request failed with Status %d: %s", f.Status, f.ErrMsg)
 }
 
 func newClient(clientID string) *client {
@@ -63,16 +64,16 @@ func (c *client) makeRequest(method, url string, jsonBody interface{}) ([]byte, 
 	res, err := c.httpClient.Do(req)
 	if err != nil {
 		if data, err := ioutil.ReadAll(res.Body); err == nil {
-			return nil, &failedRequestError{status: res.StatusCode, errMsg: string(data)}
+			return nil, &FailedRequestError{Status: res.StatusCode, ErrMsg: string(data)}
 		}
-		return nil, &failedRequestError{status: res.StatusCode}
+		return nil, &FailedRequestError{Status: res.StatusCode}
 	}
 
 	if res.StatusCode < 200 || res.StatusCode > 299 {
 		if data, err := ioutil.ReadAll(res.Body); err == nil {
-			return nil, &failedRequestError{status: res.StatusCode, errMsg: string(data)}
+			return nil, &FailedRequestError{Status: res.StatusCode, ErrMsg: string(data)}
 		}
-		return nil, &failedRequestError{status: res.StatusCode}
+		return nil, &FailedRequestError{Status: res.StatusCode}
 	}
 
 	data, err := ioutil.ReadAll(res.Body)
@@ -239,16 +240,16 @@ func (c *client) downloadProgressive(url string, dst io.Writer) error {
 	res, err := c.httpClient.Do(req)
 	if err != nil {
 		if data, err := ioutil.ReadAll(res.Body); err == nil {
-			return &failedRequestError{status: res.StatusCode, errMsg: string(data)}
+			return &FailedRequestError{Status: res.StatusCode, ErrMsg: string(data)}
 		}
-		return &failedRequestError{status: res.StatusCode}
+		return &FailedRequestError{Status: res.StatusCode}
 	}
 
 	if res.StatusCode < 200 || res.StatusCode > 299 {
 		if data, err := ioutil.ReadAll(res.Body); err == nil {
-			return &failedRequestError{status: res.StatusCode, errMsg: string(data)}
+			return &FailedRequestError{Status: res.StatusCode, ErrMsg: string(data)}
 		}
-		return &failedRequestError{status: res.StatusCode}
+		return &FailedRequestError{Status: res.StatusCode}
 	}
 
 	_, err = io.Copy(dst, res.Body)
@@ -263,7 +264,7 @@ func (c *client) downloadHLS(url string, dst io.Writer) error {
 	// The audio for the track is streamed as per the HLS protocol, see: https://en.wikipedia.org/wiki/HTTP_Live_Streaming
 	m3u8Raw, err := c.makeRequest("GET", url, nil)
 	if err != nil {
-		return errors.Wrap(err, "Failed to get m3u8 data")
+		return err
 	}
 
 	buf := bytes.NewBuffer(m3u8Raw)
@@ -337,7 +338,7 @@ func (c *client) downloadHLSAll(segments []*m3u8.MediaSegment, dst io.Writer) er
 	for {
 		select {
 		case err := <-errChan:
-			return errors.Wrap(err, "Failed to download HLS track")
+			return err
 		case r := <-resultChan:
 			downloadedSegments[r.Index] = r.Data
 			complete++
@@ -362,16 +363,16 @@ func (c *client) downloadHLSSegment(url string) ([]byte, error) {
 	res, err := http.Get(url)
 	if err != nil {
 		if data, err := ioutil.ReadAll(res.Body); err == nil {
-			return nil, &failedRequestError{status: res.StatusCode, errMsg: string(data)}
+			return nil, &FailedRequestError{Status: res.StatusCode, ErrMsg: string(data)}
 		}
-		return nil, &failedRequestError{status: res.StatusCode}
+		return nil, &FailedRequestError{Status: res.StatusCode}
 	}
 
 	if res.StatusCode < 200 || res.StatusCode > 299 {
 		if data, err := ioutil.ReadAll(res.Body); err == nil {
-			return nil, &failedRequestError{status: res.StatusCode, errMsg: string(data)}
+			return nil, &FailedRequestError{Status: res.StatusCode, ErrMsg: string(data)}
 		}
-		return nil, &failedRequestError{status: res.StatusCode}
+		return nil, &FailedRequestError{Status: res.StatusCode}
 	}
 
 	data, err := ioutil.ReadAll(res.Body)
@@ -462,7 +463,7 @@ func (c *client) getPlaylistInfo(url string) (Playlist, error) {
 				select {
 				case err = <-errChan:
 					if err != nil {
-						return playlist, errors.Wrap(err, "Failed to retreive playlist tracks")
+						return playlist, err
 					}
 				case r := <-resultsChan:
 					completeCount++
@@ -489,7 +490,7 @@ func (c *client) getPlaylistInfo(url string) (Playlist, error) {
 			})
 
 			if err != nil {
-				return playlist, errors.Wrap(err, "Failed to retrieve track information for playlist")
+				return playlist, err
 			}
 
 			for _, track := range trackInfo {
@@ -546,7 +547,7 @@ func (c *client) getUser(options GetUserOptions) (User, error) {
 
 	data, err := c.makeRequest("GET", u, nil)
 	if err != nil {
-		return user, errors.Wrap(err, "Failed to get user")
+		return user, err
 	}
 
 	err = json.Unmarshal(data, &user)
@@ -573,7 +574,7 @@ func (c *client) getLikes(options GetLikesOptions) (*PaginatedLikeQuery, error) 
 	if options.ProfileURL != "" {
 		user, err := c.getUser(GetUserOptions{ProfileURL: options.ProfileURL})
 		if err != nil {
-			return nil, errors.Wrap(err, "Failed to get user to retrieve likes")
+			return nil, err
 		}
 
 		options.ID = user.ID
@@ -594,7 +595,7 @@ func (c *client) getLikes(options GetLikesOptions) (*PaginatedLikeQuery, error) 
 	data, err := c.makeRequest("GET", u, nil)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to get likes")
+		return nil, err
 	}
 
 	err = json.Unmarshal(data, &query)
