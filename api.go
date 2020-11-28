@@ -33,6 +33,7 @@ type Track struct {
 	PermalinkURL      string `json:"permalink_url"`
 	PlaybackCount     int64  `json:"playback_count"`
 	SecretToken       string `json:"secret_token"`
+	User              User   `json:"user"`
 }
 
 // Media contains an array of transcoding for a track
