@@ -82,3 +82,8 @@ func (sc *API) DownloadTrack(transcoding Transcoding, dst io.Writer) error {
 func (sc *API) GetLikes(options GetLikesOptions) (*PaginatedLikeQuery, error) {
 	return sc.client.getLikes(options)
 }
+
+// Search returns a PaginatedQuery for searching a specific query
+func (sc *API) Search(options SearchOptions) (*PaginatedQuery, error) {
+	return sc.client.search(options)
+}

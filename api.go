@@ -120,12 +120,20 @@ type PaginatedQuery struct {
 	QueryURN     string        `json:"query_urn"`
 }
 
-// PaginatedLikeQuery is the JSON response for a paginated query for tracks
+// PaginatedLikeQuery is the JSON response for a paginated query for likes
 type PaginatedLikeQuery struct {
 	Collection   []Like `json:"collection"`
 	TotalResults int    `json:"total_results"`
 	NextHref     string `json:"next_href"`
 	QueryURN     string `json:"query_urn"`
+}
+
+// PaginatedTrackQuery is the JSON response for a paginated query for tracks
+type PaginatedTrackQuery struct {
+	Collection   []Track `json:"collection"`
+	TotalResults int     `json:"total_results"`
+	NextHref     string  `json:"next_href"`
+	QueryURN     string  `json:"query_urn"`
 }
 
 // Like is the JSON response for a like

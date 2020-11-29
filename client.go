@@ -29,6 +29,7 @@ type FailedRequestError struct {
 const trackURL = "https://api-v2.soundcloud.com/tracks"
 const resolveURL = "https://api-v2.soundcloud.com/resolve"
 const usersURL = "https://api-v2.soundcloud.com/users/"
+const searchURL = "https://api-v2.soundcloud.com/search"
 
 func (f *FailedRequestError) Error() string {
 	if f.ErrMsg == "" {
@@ -604,4 +605,71 @@ func (c *client) getLikes(options GetLikesOptions) (*PaginatedLikeQuery, error) 
 	}
 
 	return &query, nil
+}
+
+// SearchOptions are the parameters for executing a search
+type SearchOptions struct {
+	// This is the NextHref property of PaginatedQuery structs
+	QueryURL string
+	Query    string
+	// Number of items to return + 1 (for some reason SoundCloud returns limit - 1, so if you want 10 items set limit to 11)
+	Limit int
+	// Number of items to offset by (for pagination)
+	Offset int
+	// The type of item to return ("tracks", "")
+	Kind SearchKind
+}
+
+// SearchKind is a string
+type SearchKind string
+
+// SearchKindTrack indicates to search for tracks
+const SearchKindTrack SearchKind = "tracks"
+
+// SearchKindAlbum indicates to search for tracks
+const SearchKindAlbum SearchKind = "albums"
+
+// SearchKindPlaylist indicates to search for tracks
+const SearchKindPlaylist SearchKind = "playlist_without_albums"
+
+// SearchKindPeople indicates to search for users
+const SearchKindPeople SearchKind = "users"
+
+func (c *client) search(options SearchOptions) (*PaginatedQuery, error) {
+	var u string
+	var err error
+
+	if options.Limit == 0 {
+		options.Limit = 10
+	}
+
+	if options.QueryURL != "" {
+		u = options.QueryURL
+	} else {
+		kind := "/" + options.Kind
+		if kind == "/" {
+			kind = ""
+		}
+
+		u, err = c.buildURL(searchURL+string(kind), true, "q", options.Query, "limit", strconv.Itoa(options.Limit), "offset", strconv.Itoa(options.Offset))
+
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to build URL for search()")
+		}
+	}
+
+	data, err := c.makeRequest("GET", u, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PaginatedQuery{}
+	err = json.Unmarshal(data, response)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to unmarshal response")
+	}
+
+	return response, nil
 }
