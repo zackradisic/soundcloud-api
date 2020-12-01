@@ -105,6 +105,7 @@ type User struct {
 	PermalinkURL    string `json:"permalink_url"`
 	URI             string `json:"uri"`
 	Username        string `json:"username"`
+	Kind            string `json:"kind"`
 }
 
 // MediaURLResponse is the JSON response of retrieving media information of a track
