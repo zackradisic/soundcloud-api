@@ -87,3 +87,8 @@ func (sc *API) GetLikes(options GetLikesOptions) (*PaginatedLikeQuery, error) {
 func (sc *API) Search(options SearchOptions) (*PaginatedQuery, error) {
 	return sc.client.search(options)
 }
+
+// GetUser returns a User
+func (sc *API) GetUser(options GetUserOptions) (User, error) {
+	return sc.client.getUser(options)
+}

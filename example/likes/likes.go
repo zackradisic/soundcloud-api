@@ -27,7 +27,7 @@ func main() {
 		return
 	}
 
-	for _, track := range query.Collection {
-		fmt.Println(track.Track.Title)
+	for i, track := range query.Collection {
+		fmt.Printf("%d. %s %s\n", i+1, track.Track.Title, track.Track.Kind)
 	}
 }
