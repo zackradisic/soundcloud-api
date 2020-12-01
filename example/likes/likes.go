@@ -17,8 +17,8 @@ func main() {
 	fmt.Println(sc.ClientID())
 
 	query, err := sc.GetLikes(soundcloudapi.GetLikesOptions{
-		ProfileURL: "https://soundcloud.com/dlfsldkjf",
-		Limit:      100,
+		ProfileURL: "https://soundcloud.com/zack_lofi/likes",
+		Limit:      1000,
 		Offset:     0,
 	})
 
@@ -27,7 +27,7 @@ func main() {
 		return
 	}
 
-	for _, track := range query.Collection {
-		fmt.Println(track.Track.Title)
+	for i, track := range query.Collection {
+		fmt.Printf("%d. %s %s\n", i+1, track.Track.Title, track.Track.Kind)
 	}
 }
