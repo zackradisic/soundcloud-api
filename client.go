@@ -508,9 +508,9 @@ func (c *client) getPlaylistInfo(url string) (Playlist, error) {
 	return playlist, nil
 }
 
+// resolve is a handy API endpoint that returns info from the given resource URL
 func (c *client) resolve(url string) ([]byte, error) {
-	// Resolve is a handy API endpoint that returns info for the given resource
-	u, err := c.buildURL(resolveURL, true, "url", url)
+	u, err := c.buildURL(resolveURL, true, "url", strings.TrimRight(url, "/"))
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to build URL for resolve()")
 	}
