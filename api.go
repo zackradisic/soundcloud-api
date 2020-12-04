@@ -106,6 +106,9 @@ type User struct {
 	URI             string `json:"uri"`
 	Username        string `json:"username"`
 	Kind            string `json:"kind"`
+	Likes           int    `json:"likes_count"`
+	PlaylistLikes   int    `json:"playlist_likes_count"`
+	Verified        bool   `json:"verified"`
 }
 
 // MediaURLResponse is the JSON response of retrieving media information of a track
