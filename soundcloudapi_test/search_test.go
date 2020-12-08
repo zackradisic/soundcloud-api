@@ -1,7 +1,6 @@
 package soundcloudapi_test
 
 import (
-	"encoding/json"
 	"testing"
 
 	soundcloudapi "github.com/zackradisic/soundcloud-api"
@@ -11,7 +10,7 @@ func TestSearch(t *testing.T) {
 
 	response, err := api.Search(soundcloudapi.SearchOptions{
 		Query: "redbone",
-		Kind:  soundcloudapi.SearchKindTrack,
+		Kind:  soundcloudapi.KindTrack,
 	})
 
 	if err != nil {
@@ -19,14 +18,16 @@ func TestSearch(t *testing.T) {
 		return
 	}
 
-	data, err := json.Marshal(response)
-	trackQuery := &soundcloudapi.PaginatedTrackQuery{}
+	tracks, err := response.GetTracks()
 
-	err = json.Unmarshal(data, trackQuery)
+	if len(tracks) == 0 {
+		t.Error("Received no tracks")
+		return
+	}
 
-	for _, item := range trackQuery.Collection {
-		if item.Kind != "track" {
-			t.Errorf("Not every item in PaginatedTrackQuery has kind = 'track'. Received (%s) Expected (%s) ", item.Kind, "track")
+	for _, track := range tracks {
+		if track.Kind != "track" {
+			t.Errorf("Kind mismatch expected (%s) received (%s)\n", "track", track.Kind)
 		}
 	}
 }

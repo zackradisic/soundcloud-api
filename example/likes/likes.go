@@ -20,6 +20,7 @@ func main() {
 		ProfileURL: "https://soundcloud.com/dlfsldkjf",
 		Limit:      100,
 		Offset:     0,
+		Type:       "track",
 	})
 
 	if err != nil {
@@ -27,7 +28,9 @@ func main() {
 		return
 	}
 
-	for i, track := range query.Collection {
-		fmt.Printf("%d. %s %s\n", i+1, track.Track.Title, track.Track.Kind)
+	likes, err := query.GetLikes()
+
+	for _, like := range likes {
+		fmt.Println(like.Track)
 	}
 }

@@ -79,7 +79,7 @@ func (sc *API) DownloadTrack(transcoding Transcoding, dst io.Writer) error {
 }
 
 // GetLikes returns a PaginatedQuery with the Collection field member as a list of tracks
-func (sc *API) GetLikes(options GetLikesOptions) (*PaginatedLikeQuery, error) {
+func (sc *API) GetLikes(options GetLikesOptions) (*PaginatedQuery, error) {
 	return sc.client.getLikes(options)
 }
 

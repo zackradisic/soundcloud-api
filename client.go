@@ -565,10 +565,11 @@ type GetLikesOptions struct {
 	ID         int64  //  User's ID if you have it
 	Limit      int    // How many tracks to return (defaults to 10)
 	Offset     int    // How many tracks to offset by (used for pagination; defaults to 0)
+	Type       string // What type of resource to return. One of ["track", "playlist", "all"]. Defaults to "all"
 }
 
-func (c *client) getLikes(options GetLikesOptions) (*PaginatedLikeQuery, error) {
-	var query PaginatedLikeQuery
+func (c *client) getLikes(options GetLikesOptions) (*PaginatedQuery, error) {
+	var query PaginatedQuery
 	var u string // URL takes the form: https://api-v2.soundcloud.com/users/<id>/likes
 	var err error
 
@@ -591,8 +592,22 @@ func (c *client) getLikes(options GetLikesOptions) (*PaginatedLikeQuery, error) 
 		options.Offset = 0
 	}
 
-	u, err = c.buildURL(usersURL+strconv.FormatInt(options.ID, 10)+"/likes", true, "limit", strconv.Itoa(options.Limit), "offset", strconv.Itoa(options.Offset))
+	if options.Type == "" {
+		options.Type = "all"
+	}
 
+	if options.Type == "track" {
+		options.Type = "track_likes"
+	} else if options.Type == "playlist" {
+		options.Type = "playlist_likes"
+	} else {
+		options.Type = "likes"
+	}
+
+	u, err = c.buildURL(usersURL+strconv.FormatInt(options.ID, 10)+"/"+options.Type, true, "limit", strconv.Itoa(options.Limit), "offset", strconv.Itoa(options.Offset))
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to build URL for getLikes()")
+	}
 	data, err := c.makeRequest("GET", u, nil)
 
 	if err != nil {
@@ -617,23 +632,23 @@ type SearchOptions struct {
 	// Number of items to offset by (for pagination)
 	Offset int
 	// The type of item to return ("tracks", "")
-	Kind SearchKind
+	Kind Kind
 }
 
-// SearchKind is a string
-type SearchKind string
+// Kind is a string
+type Kind string
 
-// SearchKindTrack indicates to search for tracks
-const SearchKindTrack SearchKind = "tracks"
+// KindTrack is the kind for a Track
+const KindTrack Kind = "tracks"
 
-// SearchKindAlbum indicates to search for tracks
-const SearchKindAlbum SearchKind = "albums"
+// KindAlbum is the kind for an album
+const KindAlbum Kind = "albums"
 
-// SearchKindPlaylist indicates to search for tracks
-const SearchKindPlaylist SearchKind = "playlist_without_albums"
+// KindPlaylist is the kind for a playlist
+const KindPlaylist Kind = "playlist_without_albums"
 
-// SearchKindPeople indicates to search for users
-const SearchKindPeople SearchKind = "users"
+// KindUser is the kind for a user
+const KindUser Kind = "users"
 
 func (c *client) search(options SearchOptions) (*PaginatedQuery, error) {
 	var u string
@@ -641,6 +656,10 @@ func (c *client) search(options SearchOptions) (*PaginatedQuery, error) {
 
 	if options.Limit == 0 {
 		options.Limit = 10
+	}
+
+	if options.Kind == KindPlaylist {
+		options.Kind = "playlist_without_albums"
 	}
 
 	if options.QueryURL != "" {
