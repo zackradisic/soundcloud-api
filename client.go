@@ -64,10 +64,7 @@ func (c *client) makeRequest(method, url string, jsonBody interface{}) ([]byte, 
 
 	res, err := c.httpClient.Do(req)
 	if err != nil {
-		if data, err := ioutil.ReadAll(res.Body); err == nil {
-			return nil, &FailedRequestError{Status: res.StatusCode, ErrMsg: string(data)}
-		}
-		return nil, &FailedRequestError{Status: res.StatusCode}
+		return nil, err
 	}
 
 	if res.StatusCode < 200 || res.StatusCode > 299 {
@@ -240,10 +237,7 @@ func (c *client) downloadProgressive(url string, dst io.Writer) error {
 
 	res, err := c.httpClient.Do(req)
 	if err != nil {
-		if data, err := ioutil.ReadAll(res.Body); err == nil {
-			return &FailedRequestError{Status: res.StatusCode, ErrMsg: string(data)}
-		}
-		return &FailedRequestError{Status: res.StatusCode}
+		return err
 	}
 
 	if res.StatusCode < 200 || res.StatusCode > 299 {
@@ -363,10 +357,7 @@ func (c *client) downloadHLSAll(segments []*m3u8.MediaSegment, dst io.Writer) er
 func (c *client) downloadHLSSegment(url string) ([]byte, error) {
 	res, err := http.Get(url)
 	if err != nil {
-		if data, err := ioutil.ReadAll(res.Body); err == nil {
-			return nil, &FailedRequestError{Status: res.StatusCode, ErrMsg: string(data)}
-		}
-		return nil, &FailedRequestError{Status: res.StatusCode}
+		return nil, err
 	}
 
 	if res.StatusCode < 200 || res.StatusCode > 299 {
