@@ -618,11 +618,11 @@ type SearchOptions struct {
 	// This is the NextHref property of PaginatedQuery structs
 	QueryURL string
 	Query    string
-	// Number of items to return + 1 (for some reason SoundCloud returns limit - 1, so if you want 10 items set limit to 11)
+	// Number of items to return
 	Limit int
 	// Number of items to offset by (for pagination)
 	Offset int
-	// The type of item to return ("tracks", "")
+	// The type of item to return
 	Kind Kind
 }
 
