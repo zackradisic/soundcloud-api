@@ -636,7 +636,7 @@ const KindTrack Kind = "tracks"
 const KindAlbum Kind = "albums"
 
 // KindPlaylist is the kind for a playlist
-const KindPlaylist Kind = "playlist_without_albums"
+const KindPlaylist Kind = "playlist"
 
 // KindUser is the kind for a user
 const KindUser Kind = "users"
