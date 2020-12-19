@@ -1,6 +1,7 @@
 package soundcloudapi
 
 import (
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -13,6 +14,20 @@ var urlRegex = regexp.MustCompile(urlRegexp)
 // IsURL returns true if the provided url is a valid SoundCloud URL
 func IsURL(url string) bool {
 	return len(urlRegex.FindAllString(url, -1)) > 0
+}
+
+// IsPlaylist retuns true if the provided url is a valid SoundCloud playlist URL
+func IsPlaylist(u string) bool {
+	if !IsURL(u) {
+		return false
+	}
+
+	uObj, err := url.Parse(u)
+	if err != nil {
+		return false
+	}
+
+	return strings.Contains(uObj.Path, "/sets/")
 }
 
 func sliceContains(slice []int64, x int64) bool {
