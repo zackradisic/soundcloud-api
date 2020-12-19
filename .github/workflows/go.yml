@@ -3,6 +3,10 @@ name: Go
 on:
   push:
     branches: [ master ]
+    paths-ignore:
+    - .github/
+    - README.md
+    - example
   pull_request:
     branches: [ master ]
 
