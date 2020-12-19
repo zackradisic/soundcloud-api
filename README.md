@@ -44,3 +44,17 @@ if failedRequest, ok := err.(*soundcloudapi.FailedRequestError); ok {
     return
 }
 ```
+
+# Paginated Queries
+Functions like [`sc.Search()`](https://pkg.go.dev/github.com/zackradisic/soundcloud-api@v0.1.0#API.Search) or [`sc.GetLikes()`](https://pkg.go.dev/github.com/zackradisic/soundcloud-api@v0.1.0#API.GetLikes) return a [PaginatedQuery](https://pkg.go.dev/github.com/zackradisic/soundcloud-api@v0.1.0#PaginatedQuery). PaginatedQuery.Collection contains the JSON of the items that matched the query,
+represented as a `map[string]interface{}`. You can use the provided functions to get the items in the form you want:
+
+```go
+paginatedQuery, _ := sc.Search(soundcloudapi.SearchOptions{
+    Query: "childish gambino"
+})
+
+tracks, _ := paginatedQuery.GetTracks() // Get the tracks of the response
+playlists, _ := paginatedQuery.GetPlaylists() // Get the playlists of the response
+likes, _ := paginatedQuery.GetLikes() // Get the likes of the response
+```
