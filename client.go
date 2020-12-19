@@ -39,9 +39,12 @@ func (f *FailedRequestError) Error() string {
 	return fmt.Sprintf("Request failed with Status %d: %s", f.Status, f.ErrMsg)
 }
 
-func newClient(clientID string) *client {
+func newClient(clientID string, httpClient *http.Client) *client {
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
 	return &client{
-		httpClient: http.DefaultClient,
+		httpClient: httpClient,
 		clientID:   clientID,
 	}
 }

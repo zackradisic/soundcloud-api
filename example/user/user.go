@@ -3,13 +3,17 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
+	"time"
 
 	soundcloudapi "github.com/zackradisic/soundcloud-api"
 )
 
 func main() {
 
-	sc, err := soundcloudapi.New("")
+	sc, err := soundcloudapi.New("", &http.Client{
+		Timeout: time.Second * 20,
+	})
 
 	if err != nil {
 		log.Fatal(err.Error())

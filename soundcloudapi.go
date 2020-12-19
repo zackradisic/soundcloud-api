@@ -2,6 +2,7 @@ package soundcloudapi
 
 import (
 	"io"
+	"net/http"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -15,7 +16,7 @@ type API struct {
 // New returns a pointer to a new SoundCloud API struct.
 //
 // clientID is optional and a new one will be fetched if not provided
-func New(clientID string) (*API, error) {
+func New(clientID string, client *http.Client) (*API, error) {
 	if clientID == "" {
 		var err error
 		clientID, err = FetchClientID()
@@ -25,7 +26,7 @@ func New(clientID string) (*API, error) {
 	}
 
 	return &API{
-		client: newClient(clientID),
+		client: newClient(clientID, client),
 	}, nil
 }
 
