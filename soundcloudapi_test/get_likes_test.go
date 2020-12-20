@@ -63,8 +63,8 @@ func getLikes(options soundcloudapi.GetLikesOptions) ([]soundcloudapi.Like, erro
 		return nil, errors.Wrap(err, "GetLikes API endpoint failed")
 	}
 
-	if len(response.Collection) != options.Limit {
-		return nil, errors.Errorf("Collection does not have the right amount of items. Expected (%d), received (%d)\n", options.Limit, len(response.Collection))
+	if len(response.Collection) > options.Limit {
+		return nil, errors.Errorf("Collection does not have the right max amount of items. Expected max (%d), received (%d)\n", options.Limit, len(response.Collection))
 	}
 
 	for _, item := range response.Collection {
