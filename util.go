@@ -22,6 +22,10 @@ func IsPlaylist(u string) bool {
 		return false
 	}
 
+	if IsPersonalizedTrackURL(u) {
+		return false
+	}
+
 	uObj, err := url.Parse(u)
 	if err != nil {
 		return false
@@ -30,10 +34,16 @@ func IsPlaylist(u string) bool {
 	return strings.Contains(uObj.Path, "/sets/")
 }
 
+// IsPersonalizedTrackURL returns true if the provided url is a valid personalized track url. Ex/
+// https://soundcloud.com/discover/sets/personalized-tracks::sam:335899198
+func IsPersonalizedTrackURL(url string) bool {
+	return strings.Contains(url, "https://soundcloud.com/discover/sets/personalized-tracks::")
+}
+
 // ExtractIDFromPersonalizedTrackURL extracts the track ID from a personalized track URL, returns -1
 // if no track ID can be extracted
 func ExtractIDFromPersonalizedTrackURL(url string) int64 {
-	if !strings.Contains(url, "https://soundcloud.com/discover/sets/personalized-tracks::") {
+	if !IsPersonalizedTrackURL(url) {
 		return -1
 	}
 
