@@ -36,7 +36,7 @@ func IsPlaylist(u string) bool {
 
 // IsSearchURL returns true  if the provided url is a valid search url
 func IsSearchURL(url string) bool {
-	return strings.Index(url, "https://soundcloud.com/search?") == 1
+	return strings.Index(url, "https://soundcloud.com/search?") == 0
 }
 
 // IsPersonalizedTrackURL returns true if the provided url is a valid personalized track url. Ex/
