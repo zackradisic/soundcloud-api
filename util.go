@@ -34,6 +34,11 @@ func IsPlaylist(u string) bool {
 	return strings.Contains(uObj.Path, "/sets/")
 }
 
+// IsSearchURL returns true  if the provided url is a valid search url
+func IsSearchURL(url string) bool {
+	return strings.Index(url, "https://soundcloud.com/search?") == 1
+}
+
 // IsPersonalizedTrackURL returns true if the provided url is a valid personalized track url. Ex/
 // https://soundcloud.com/discover/sets/personalized-tracks::sam:335899198
 func IsPersonalizedTrackURL(url string) bool {
