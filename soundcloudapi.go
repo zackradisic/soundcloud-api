@@ -49,6 +49,7 @@ func (sc *API) ClientID() string {
 // are provided.
 func (sc *API) GetTrackInfo(options GetTrackInfoOptions) ([]Track, error) {
 	if options.URL != "" {
+		options.URL = StripMobilePrefix(options.URL)
 		id := ExtractIDFromPersonalizedTrackURL(options.URL)
 		if id != -1 {
 			return sc.client.getTrackInfo(GetTrackInfoOptions{ID: []int64{id}})
@@ -59,12 +60,12 @@ func (sc *API) GetTrackInfo(options GetTrackInfoOptions) ([]Track, error) {
 
 // GetPlaylistInfo returns the info for a playlist
 func (sc *API) GetPlaylistInfo(url string) (Playlist, error) {
-	return sc.client.getPlaylistInfo(url)
+	return sc.client.getPlaylistInfo(StripMobilePrefix(url))
 }
 
 // DownloadTrack downloads the track specified by the given Transcoding's URL to dst
 func (sc *API) DownloadTrack(transcoding Transcoding, dst io.Writer) error {
-	u, err := sc.client.getMediaURL(transcoding.URL)
+	u, err := sc.client.getMediaURL(StripMobilePrefix(transcoding.URL))
 	if err != nil {
 		return err
 	}
@@ -81,6 +82,7 @@ func (sc *API) DownloadTrack(transcoding Transcoding, dst io.Writer) error {
 
 // GetLikes returns a PaginatedQuery with the Collection field member as a list of tracks
 func (sc *API) GetLikes(options GetLikesOptions) (*PaginatedQuery, error) {
+	options.ProfileURL = StripMobilePrefix(options.ProfileURL)
 	return sc.client.getLikes(options)
 }
 
@@ -91,5 +93,46 @@ func (sc *API) Search(options SearchOptions) (*PaginatedQuery, error) {
 
 // GetUser returns a User
 func (sc *API) GetUser(options GetUserOptions) (User, error) {
+	options.ProfileURL = StripMobilePrefix(options.ProfileURL)
 	return sc.client.getUser(options)
+}
+
+// GetDownloadURL retuns the URL to download a track. This is useful if you want to implement your own
+// downloading algorithm.
+//
+// streamType can be either "hls" or "progressive", defaults to "progressive"
+func (sc *API) GetDownloadURL(url string, streamType string) (string, error) {
+	url = StripMobilePrefix(url)
+	streamType = strings.ToLower(streamType)
+	if streamType == "" {
+		streamType = "progressive"
+	}
+
+	if IsURL(url) && !IsPlaylistURL(url) {
+		info, err := sc.client.getTrackInfo(GetTrackInfoOptions{
+			URL: url,
+		})
+
+		if err != nil {
+			return "", err
+		}
+
+		if len(info) == 0 {
+			return "", errors.New("Could not find a track with that URL")
+		}
+
+		for _, transcoding := range info[0].Media.Transcodings {
+			if strings.ToLower(transcoding.Format.Protocol) == streamType {
+				mediaURL, err := sc.client.getMediaURL(transcoding.URL)
+				if err != nil {
+					return "", err
+				}
+				return mediaURL, nil
+			}
+		}
+	} else {
+		return "", errors.New("URL is not a track URL")
+	}
+
+	return "", errors.New("Could not find a download URL for that track")
 }
