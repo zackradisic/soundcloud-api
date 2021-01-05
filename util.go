@@ -1,13 +1,21 @@
 package soundcloudapi
 
 import (
+	"io/ioutil"
+	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 const urlRegexp = `^https?:\/\/(soundcloud\.com)\/(.*)$`
+
+const firebaseRegexp = "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._+~#=]{1,500}\\.[a-zA-Z0-9()]{1,500}\\b([-a-zA-Z0-9()@:%_+.~#?&//\\\\=]*)"
+
+var firebaseRegex = regexp.MustCompile(firebaseRegexp)
 
 var urlRegex = regexp.MustCompile(urlRegexp)
 
@@ -16,8 +24,49 @@ func IsURL(url string) bool {
 	return len(urlRegex.FindAllString(url, -1)) > 0
 }
 
-// IsPlaylist retuns true if the provided url is a valid SoundCloud playlist URL
-func IsPlaylist(u string) bool {
+// StripMobilePrefix removes the prefix for mobile urls. Returns the same string if an error parsing the URL occurs
+func StripMobilePrefix(u string) string {
+	if !strings.Contains(u, "m.soundcloud.com") {
+		return u
+	}
+	_url, err := url.Parse(u)
+	if err != nil {
+		return u
+	}
+	_url.Host = "soundcloud.com"
+	return _url.String()
+}
+
+// IsFirebaseURL returns true if the url is a SoundCloud Firebase url (has the following form: https://soundcloud.app.goo.gl/xxxxxxxx)
+func IsFirebaseURL(u string) bool {
+	return !strings.Contains(u, "https://soundcloud.app.goo.gl")
+}
+
+// ConvertFirebaseLink converts a link of the form (https://soundcloud.app.goo.gl/xxxxxxxx) to a regular
+// SoundCloud link.
+func ConvertFirebaseLink(u string) (string, error) {
+	res, err := http.Get(u)
+	if err != nil {
+		return "", err
+	}
+
+	data, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return "", err
+	}
+	matches := firebaseRegex.FindAllString(string(data), -1)
+
+	for _, match := range matches {
+		if IsURL(match) {
+			return match, nil
+		}
+	}
+
+	return "", errors.New("Could not find regular SoundCloud URL from the URL provided")
+}
+
+// IsPlaylistURL retuns true if the provided url is a valid SoundCloud playlist URL
+func IsPlaylistURL(u string) bool {
 	if !IsURL(u) {
 		return false
 	}
