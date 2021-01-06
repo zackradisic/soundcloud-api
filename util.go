@@ -19,6 +19,8 @@ var firebaseRegex = regexp.MustCompile(firebaseRegexp)
 
 var urlRegex = regexp.MustCompile(urlRegexp)
 
+var unicodeRegex = regexp.MustCompile(`(?i)\\u([\d\w]{4})`)
+
 // IsURL returns true if the provided url is a valid SoundCloud URL
 func IsURL(url string) bool {
 	return len(urlRegex.FindAllString(url, -1)) > 0
@@ -42,10 +44,30 @@ func IsFirebaseURL(u string) bool {
 	return !strings.Contains(u, "https://soundcloud.app.goo.gl")
 }
 
+func replaceUnicodeChars(str string) (string, error) {
+	for _, match := range unicodeRegex.FindAllString(str, -1) {
+		s, err := strconv.Unquote("'" + match + "'")
+		if err != nil {
+			return "", err
+		}
+		str = strings.Replace(str, match, s, -1)
+	}
+
+	return str, nil
+}
+
 // ConvertFirebaseLink converts a link of the form (https://soundcloud.app.goo.gl/xxxxxxxx) to a regular
 // SoundCloud link.
 func ConvertFirebaseLink(u string) (string, error) {
-	res, err := http.Get(u)
+	_url, err := url.Parse(u)
+	if err != nil {
+		return "", err
+	}
+	q := _url.Query()
+	q.Set("d", "1")
+	_url.RawQuery = q.Encode()
+
+	res, err := http.Get(_url.String())
 	if err != nil {
 		return "", err
 	}
@@ -58,7 +80,11 @@ func ConvertFirebaseLink(u string) (string, error) {
 
 	for _, match := range matches {
 		if IsURL(match) {
-			return match, nil
+			str, err := replaceUnicodeChars(match)
+			if err != nil {
+				return "", err
+			}
+			return str, nil
 		}
 	}
 
