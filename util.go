@@ -11,13 +11,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-const urlRegexp = `^https?:\/\/(soundcloud\.com)\/(.*)$`
+var firebaseRegex = regexp.MustCompile("https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._+~#=]{1,500}\\.[a-zA-Z0-9()]{1,500}\\b([-a-zA-Z0-9()@:%_+.~#?&//\\\\=]*)")
 
-const firebaseRegexp = "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._+~#=]{1,500}\\.[a-zA-Z0-9()]{1,500}\\b([-a-zA-Z0-9()@:%_+.~#?&//\\\\=]*)"
-
-var firebaseRegex = regexp.MustCompile(firebaseRegexp)
-
-var urlRegex = regexp.MustCompile(urlRegexp)
+var urlRegex = regexp.MustCompile(`(?m)(^https?:\/\/((m.)?soundcloud\.com)\/(.*)$)|(^https?:\/\/(soundcloud\.app\.goo\.gl)\/(.*)$)`)
 
 var unicodeRegex = regexp.MustCompile(`(?i)\\u([\d\w]{4})`)
 
