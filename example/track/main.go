@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"time"
 
@@ -13,9 +12,7 @@ import (
 func main() {
 	start := time.Now().UnixNano() / int64(time.Millisecond)
 	fmt.Println(start)
-	sc, err := soundcloudapi.New("", &http.Client{
-		Timeout: time.Second * 20,
-	})
+	sc, err := soundcloudapi.New(soundcloudapi.APIOptions{})
 
 	if err != nil {
 		log.Fatal(err.Error())

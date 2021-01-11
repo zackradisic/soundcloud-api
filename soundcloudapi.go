@@ -10,23 +10,38 @@ import (
 
 // API is a wrapper for the SoundCloud private API used internally for soundcloud.com
 type API struct {
-	client *client
+	client              *client
+	StripMobilePrefix   bool
+	ConvertFirebaseURLs bool
+}
+
+// APIOptions are the options for creating an API struct
+type APIOptions struct {
+	ClientID            string       // optional and a new one will be fetched if not provided
+	HTTPClient          *http.Client // the HTTP client to make requests with
+	StripMobilePrefix   bool         // whether or not to convert mobile URLs to regular URLs
+	ConvertFirebaseURLs bool         // whether or not to convert SoundCloud firebase URLs to regular URLs
 }
 
 // New returns a pointer to a new SoundCloud API struct.
-//
-// clientID is optional and a new one will be fetched if not provided
-func New(clientID string, client *http.Client) (*API, error) {
-	if clientID == "" {
+func New(options APIOptions) (*API, error) {
+
+	if options.ClientID == "" {
 		var err error
-		clientID, err = FetchClientID()
+		options.ClientID, err = FetchClientID()
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to initiaze SounCloudAPI")
 		}
 	}
 
+	if options.HTTPClient == nil {
+		options.HTTPClient = http.DefaultClient
+	}
+
 	return &API{
-		client: newClient(clientID, client),
+		client:              newClient(options.ClientID, options.HTTPClient),
+		StripMobilePrefix:   options.StripMobilePrefix,
+		ConvertFirebaseURLs: options.ConvertFirebaseURLs,
 	}, nil
 }
 
@@ -49,7 +64,11 @@ func (sc *API) ClientID() string {
 // are provided.
 func (sc *API) GetTrackInfo(options GetTrackInfoOptions) ([]Track, error) {
 	if options.URL != "" {
-		options.URL = StripMobilePrefix(options.URL)
+		url, err := sc.prepareURL(options.URL)
+		if err != nil {
+			return nil, err
+		}
+		options.URL = url
 		id := ExtractIDFromPersonalizedTrackURL(options.URL)
 		if id != -1 {
 			return sc.client.getTrackInfo(GetTrackInfoOptions{ID: []int64{id}})
@@ -65,7 +84,11 @@ func (sc *API) GetPlaylistInfo(url string) (Playlist, error) {
 
 // DownloadTrack downloads the track specified by the given Transcoding's URL to dst
 func (sc *API) DownloadTrack(transcoding Transcoding, dst io.Writer) error {
-	u, err := sc.client.getMediaURL(StripMobilePrefix(transcoding.URL))
+	url, err := sc.prepareURL(transcoding.URL)
+	if err != nil {
+		return err
+	}
+	u, err := sc.client.getMediaURL(url)
 	if err != nil {
 		return err
 	}
@@ -82,7 +105,11 @@ func (sc *API) DownloadTrack(transcoding Transcoding, dst io.Writer) error {
 
 // GetLikes returns a PaginatedQuery with the Collection field member as a list of tracks
 func (sc *API) GetLikes(options GetLikesOptions) (*PaginatedQuery, error) {
-	options.ProfileURL = StripMobilePrefix(options.ProfileURL)
+	url, err := sc.prepareURL(options.ProfileURL)
+	if err != nil {
+		return nil, err
+	}
+	options.ProfileURL = url
 	return sc.client.getLikes(options)
 }
 
@@ -93,7 +120,11 @@ func (sc *API) Search(options SearchOptions) (*PaginatedQuery, error) {
 
 // GetUser returns a User
 func (sc *API) GetUser(options GetUserOptions) (User, error) {
-	options.ProfileURL = StripMobilePrefix(options.ProfileURL)
+	url, err := sc.prepareURL(options.ProfileURL)
+	if err != nil {
+		return User{}, err
+	}
+	options.ProfileURL = url
 	return sc.client.getUser(options)
 }
 
@@ -102,7 +133,10 @@ func (sc *API) GetUser(options GetUserOptions) (User, error) {
 //
 // streamType can be either "hls" or "progressive", defaults to "progressive"
 func (sc *API) GetDownloadURL(url string, streamType string) (string, error) {
-	url = StripMobilePrefix(url)
+	url, err := sc.prepareURL(url)
+	if err != nil {
+		return "", err
+	}
 	streamType = strings.ToLower(streamType)
 	if streamType == "" {
 		streamType = "progressive"
@@ -135,4 +169,20 @@ func (sc *API) GetDownloadURL(url string, streamType string) (string, error) {
 	}
 
 	return "", errors.New("Could not find a download URL for that track")
+}
+
+func (sc *API) prepareURL(url string) (string, error) {
+	if sc.StripMobilePrefix {
+		url = StripMobilePrefix(url)
+	}
+
+	if sc.ConvertFirebaseURLs {
+		var err error
+		url, err = ConvertFirebaseLink(url)
+		if err != nil {
+			return "", errors.Wrap(err, "Failed to convert Firebase URL")
+		}
+	}
+
+	return url, nil
 }

@@ -13,9 +13,8 @@ SoundCloud is currently [not](https://docs.google.com/forms/d/e/1FAIpQLSfNxc82RJ
 # Quick Start
 
 ```go
-// You can pass in a client ID if you want to, 
-// if not the package will fetch one for you
-sc, err := soundcloudapi.New("", http.DefaultClient) 
+// You can specify certain options here if you want
+sc, err := soundcloudapi.New(soundcloudapi.APIOptions{}) 
 
 if err != nil {
     log.Fatal(err.Error())
