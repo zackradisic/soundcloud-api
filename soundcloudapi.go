@@ -142,7 +142,7 @@ func (sc *API) GetDownloadURL(url string, streamType string) (string, error) {
 		streamType = "progressive"
 	}
 
-	if IsURL(url) && !IsPlaylistURL(url) {
+	if IsURL(url, false, false) && !IsPlaylistURL(url) {
 		info, err := sc.client.getTrackInfo(GetTrackInfoOptions{
 			URL: url,
 		})
@@ -185,4 +185,9 @@ func (sc *API) prepareURL(url string) (string, error) {
 	}
 
 	return url, nil
+}
+
+// IsValidURL is a shorthand for IsURL(url, sc.StripMobilePrefix, sc.ConvertFirebaseURLs)
+func (sc *API) IsValidURL(url string) bool {
+	return IsURL(url, sc.StripMobilePrefix, sc.ConvertFirebaseURLs)
 }
