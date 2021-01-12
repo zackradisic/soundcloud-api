@@ -26,7 +26,9 @@ func IsURL(url string, testMobile, testFirebase bool) bool {
 	success := false
 	if testMobile {
 		success = len(mobileURLRegex.FindAllString(url, -1)) > 0
-	} else if testFirebase {
+	}
+
+	if testFirebase && !success {
 		success = len(firebaseURLRegex.FindAllString(url, -1)) > 0
 	}
 
