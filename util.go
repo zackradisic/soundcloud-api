@@ -17,7 +17,7 @@ var urlRegex = regexp.MustCompile(`(?m)^https?:\/\/(soundcloud\.com)\/(.*)$`)
 
 var firebaseURLRegex = regexp.MustCompile(`(?m)^https?:\/\/(soundcloud\.app\.goo\.gl)\/(.*)$`)
 
-var mobileURLRegex = regexp.MustCompile(`(?m)^https?:\/\/(m.soundcloud\.com)\/(.*)$`)
+var mobileURLRegex = regexp.MustCompile(`(?m)^https?:\/\/(m\.soundcloud\.com)\/(.*)$`)
 
 var unicodeRegex = regexp.MustCompile(`(?i)\\u([\d\w]{4})`)
 

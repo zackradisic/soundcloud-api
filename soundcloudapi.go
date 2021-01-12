@@ -187,7 +187,7 @@ func (sc *API) prepareURL(url string) (string, error) {
 	return url, nil
 }
 
-// IsValidURL is a shorthand for IsURL(url, sc.StripMobilePrefix, sc.ConvertFirebaseURLs)
-func (sc *API) IsValidURL(url string) bool {
+// IsURL is a shorthand for IsURL(url, sc.StripMobilePrefix, sc.ConvertFirebaseURLs)
+func (sc *API) IsURL(url string) bool {
 	return IsURL(url, sc.StripMobilePrefix, sc.ConvertFirebaseURLs)
 }
