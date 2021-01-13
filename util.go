@@ -11,19 +11,32 @@ import (
 	"github.com/pkg/errors"
 )
 
-const urlRegexp = `^https?:\/\/(soundcloud\.com)\/(.*)$`
+var firebaseRegex = regexp.MustCompile("https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._+~#=]{1,500}\\.[a-zA-Z0-9()]{1,500}\\b([-a-zA-Z0-9()@:%_+.~#?&//\\\\=]*)")
 
-const firebaseRegexp = "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._+~#=]{1,500}\\.[a-zA-Z0-9()]{1,500}\\b([-a-zA-Z0-9()@:%_+.~#?&//\\\\=]*)"
+var urlRegex = regexp.MustCompile(`(?m)^https?:\/\/(soundcloud\.com)\/(.*)$`)
 
-var firebaseRegex = regexp.MustCompile(firebaseRegexp)
+var firebaseURLRegex = regexp.MustCompile(`(?m)^https?:\/\/(soundcloud\.app\.goo\.gl)\/(.*)$`)
 
-var urlRegex = regexp.MustCompile(urlRegexp)
+var mobileURLRegex = regexp.MustCompile(`(?m)^https?:\/\/(m\.soundcloud\.com)\/(.*)$`)
 
 var unicodeRegex = regexp.MustCompile(`(?i)\\u([\d\w]{4})`)
 
 // IsURL returns true if the provided url is a valid SoundCloud URL
-func IsURL(url string) bool {
-	return len(urlRegex.FindAllString(url, -1)) > 0
+func IsURL(url string, testMobile, testFirebase bool) bool {
+	success := false
+	if testMobile {
+		success = IsMobileURL(url)
+	}
+
+	if testFirebase && !success {
+		success = IsFirebaseURL(url)
+	}
+
+	if !success {
+		success = len(urlRegex.FindAllString(url, -1)) > 0
+	}
+
+	return success
 }
 
 // StripMobilePrefix removes the prefix for mobile urls. Returns the same string if an error parsing the URL occurs
@@ -41,7 +54,12 @@ func StripMobilePrefix(u string) string {
 
 // IsFirebaseURL returns true if the url is a SoundCloud Firebase url (has the following form: https://soundcloud.app.goo.gl/xxxxxxxx)
 func IsFirebaseURL(u string) bool {
-	return !strings.Contains(u, "https://soundcloud.app.goo.gl")
+	return len(firebaseURLRegex.FindAllString(u, -1)) > 0
+}
+
+// IsMobileURL returns true if the url is a SoundCloud Firebase url (has the following form: https://m.soundcloud.com/xxxxxx)
+func IsMobileURL(u string) bool {
+	return len(mobileURLRegex.FindAllString(u, -1)) > 0
 }
 
 func replaceUnicodeChars(str string) (string, error) {
@@ -79,7 +97,7 @@ func ConvertFirebaseLink(u string) (string, error) {
 	matches := firebaseRegex.FindAllString(string(data), -1)
 
 	for _, match := range matches {
-		if IsURL(match) {
+		if IsURL(match, false, false) {
 			str, err := replaceUnicodeChars(match)
 			if err != nil {
 				return "", err
@@ -93,7 +111,7 @@ func ConvertFirebaseLink(u string) (string, error) {
 
 // IsPlaylistURL retuns true if the provided url is a valid SoundCloud playlist URL
 func IsPlaylistURL(u string) bool {
-	if !IsURL(u) {
+	if !IsURL(u, false, false) {
 		return false
 	}
 

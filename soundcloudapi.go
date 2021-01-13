@@ -142,7 +142,7 @@ func (sc *API) GetDownloadURL(url string, streamType string) (string, error) {
 		streamType = "progressive"
 	}
 
-	if IsURL(url) && !IsPlaylistURL(url) {
+	if IsURL(url, false, false) && !IsPlaylistURL(url) {
 		info, err := sc.client.getTrackInfo(GetTrackInfoOptions{
 			URL: url,
 		})
@@ -173,16 +173,25 @@ func (sc *API) GetDownloadURL(url string, streamType string) (string, error) {
 
 func (sc *API) prepareURL(url string) (string, error) {
 	if sc.StripMobilePrefix {
-		url = StripMobilePrefix(url)
+		if IsMobileURL(url) {
+			url = StripMobilePrefix(url)
+		}
 	}
 
 	if sc.ConvertFirebaseURLs {
-		var err error
-		url, err = ConvertFirebaseLink(url)
-		if err != nil {
-			return "", errors.Wrap(err, "Failed to convert Firebase URL")
+		if IsFirebaseURL(url) {
+			var err error
+			url, err = ConvertFirebaseLink(url)
+			if err != nil {
+				return "", errors.Wrap(err, "Failed to convert Firebase URL")
+			}
 		}
 	}
 
 	return url, nil
+}
+
+// IsURL is a shorthand for IsURL(url, sc.StripMobilePrefix, sc.ConvertFirebaseURLs)
+func (sc *API) IsURL(url string) bool {
+	return IsURL(url, sc.StripMobilePrefix, sc.ConvertFirebaseURLs)
 }
