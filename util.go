@@ -25,11 +25,11 @@ var unicodeRegex = regexp.MustCompile(`(?i)\\u([\d\w]{4})`)
 func IsURL(url string, testMobile, testFirebase bool) bool {
 	success := false
 	if testMobile {
-		success = len(mobileURLRegex.FindAllString(url, -1)) > 0
+		success = IsMobileURL(url)
 	}
 
 	if testFirebase && !success {
-		success = len(firebaseURLRegex.FindAllString(url, -1)) > 0
+		success = IsFirebaseURL(url)
 	}
 
 	if !success {
@@ -54,7 +54,12 @@ func StripMobilePrefix(u string) string {
 
 // IsFirebaseURL returns true if the url is a SoundCloud Firebase url (has the following form: https://soundcloud.app.goo.gl/xxxxxxxx)
 func IsFirebaseURL(u string) bool {
-	return !strings.Contains(u, "https://soundcloud.app.goo.gl")
+	return len(firebaseURLRegex.FindAllString(u, -1)) > 0
+}
+
+// IsMobileURL returns true if the url is a SoundCloud Firebase url (has the following form: https://m.soundcloud.com/xxxxxx)
+func IsMobileURL(u string) bool {
+	return len(mobileURLRegex.FindAllString(u, -1)) > 0
 }
 
 func replaceUnicodeChars(str string) (string, error) {

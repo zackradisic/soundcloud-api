@@ -173,14 +173,18 @@ func (sc *API) GetDownloadURL(url string, streamType string) (string, error) {
 
 func (sc *API) prepareURL(url string) (string, error) {
 	if sc.StripMobilePrefix {
-		url = StripMobilePrefix(url)
+		if IsMobileURL(url) {
+			url = StripMobilePrefix(url)
+		}
 	}
 
 	if sc.ConvertFirebaseURLs {
-		var err error
-		url, err = ConvertFirebaseLink(url)
-		if err != nil {
-			return "", errors.Wrap(err, "Failed to convert Firebase URL")
+		if IsFirebaseURL(url) {
+			var err error
+			url, err = ConvertFirebaseLink(url)
+			if err != nil {
+				return "", errors.Wrap(err, "Failed to convert Firebase URL")
+			}
 		}
 	}
 
