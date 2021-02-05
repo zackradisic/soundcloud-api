@@ -225,10 +225,31 @@ func (c *client) getMediaURL(url string) (string, error) {
 
 	err = json.Unmarshal(data, media)
 	if err != nil {
-		return "", errors.Wrap(err, "Failed unmarshal JSON response in getMediaURL")
+		return "", errors.Wrap(err, "Failed to unmarshal JSON response in getMediaURL")
 	}
 
 	return media.URL, nil
+}
+
+// getDownloadURL gets the download URL of a publicly downloadable track
+func (c *client) getDownloadURL(id int64) (string, error) {
+	u, err := c.buildURL(fmt.Sprintf("https://api-v2.soundcloud.com/tracks/%d/download", id), true)
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to build URL for getDownloadURL")
+	}
+
+	res := &DownloadURLResponse{}
+	data, err := c.makeRequest("GET", u, nil)
+	if err != nil {
+		return "", err
+	}
+
+	err = json.Unmarshal(data, res)
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to unmarshal JSON response in getDownloadURL")
+	}
+
+	return res.URL, nil
 }
 
 func (c *client) downloadProgressive(url string, dst io.Writer) error {

@@ -116,6 +116,11 @@ type MediaURLResponse struct {
 	URL string `json:"url"`
 }
 
+// DownloadURLResponse is the JSON respose of retrieving media information of a publicly downloadable track
+type DownloadURLResponse struct {
+	URL string `json:"redirectUri"`
+}
+
 // PaginatedQuery is the JSON response for a paginated query
 type PaginatedQuery struct {
 	Collection   []map[string]interface{} `json:"collection"`

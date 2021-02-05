@@ -130,7 +130,7 @@ func (sc *API) GetUser(options GetUserOptions) (User, error) {
 
 // GetDownloadURL retuns the URL to download a track. This is useful if you want to implement your own
 // downloading algorithm.
-//
+// If the track has a publicly available download link, that link will be preferred and the streamType parameter will be ignored.
 // streamType can be either "hls" or "progressive", defaults to "progressive"
 func (sc *API) GetDownloadURL(url string, streamType string) (string, error) {
 	url, err := sc.prepareURL(url)
@@ -153,6 +153,14 @@ func (sc *API) GetDownloadURL(url string, streamType string) (string, error) {
 
 		if len(info) == 0 {
 			return "", errors.New("Could not find a track with that URL")
+		}
+
+		if info[0].Downloadable {
+			downloadURL, err := sc.client.getDownloadURL(info[0].ID)
+			if err != nil {
+				return "", err
+			}
+			return downloadURL, nil
 		}
 
 		for _, transcoding := range info[0].Media.Transcodings {
