@@ -172,11 +172,14 @@ func (sc *API) GetDownloadURL(url string, streamType string) (string, error) {
 				return mediaURL, nil
 			}
 		}
-	} else {
-		return "", errors.New("URL is not a track URL")
-	}
 
-	return "", errors.New("Could not find a download URL for that track")
+		mediaURL, err := sc.client.getMediaURL(info[0].Media.Transcodings[0].URL)
+		if err != nil {
+			return "", err
+		}
+		return mediaURL, nil
+	}
+	return "", errors.New("URL is not a track URL")
 }
 
 func (sc *API) prepareURL(url string) (string, error) {
