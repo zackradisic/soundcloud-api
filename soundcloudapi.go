@@ -155,7 +155,7 @@ func (sc *API) GetDownloadURL(url string, streamType string) (string, error) {
 			return "", errors.New("Could not find a track with that URL")
 		}
 
-		if info[0].Downloadable {
+		if info[0].Downloadable && info[0].HasDownloadsLeft {
 			downloadURL, err := sc.client.getDownloadURL(info[0].ID)
 			if err != nil {
 				return "", err

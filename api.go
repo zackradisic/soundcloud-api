@@ -9,6 +9,7 @@ type Track struct {
 	CommentCount      int64  `json:"comment_count"`
 	FullDurationMS    int64  `json:"full_duration"`
 	Downloadable      bool   `json:"downloadable"`
+	HasDownloadsLeft  bool   `json:"has_downloads_left"`
 	CreatedAt         string `json:"created_at"`
 	Description       string `json:"description"`
 	Media             Media  `json:"media"`
