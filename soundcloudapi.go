@@ -199,7 +199,48 @@ func (sc *API) prepareURL(url string) (string, error) {
 		}
 	}
 
+	if IsNewMobileURL(url) {
+		var err error
+		url, err = sc.convertNewMobileURL(url)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to convert new mobile url")
+		}
+	}
+
 	return url, nil
+}
+
+func (sc *API) convertNewMobileURL(url string) (string, error) {
+	client := new(http.Client)
+	type urlResp struct {
+		url *string
+		err error
+	}
+	urlChan := make(chan urlResp, 1)
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		u := req.URL.String()
+
+		if IsURL(u, false, false) {
+			urlChan <- urlResp{url: &u, err: nil}
+		}
+
+		return nil
+	}
+
+	_, err := client.Get(url)
+	select {
+	case urlR := <-urlChan:
+		if urlR.url == nil {
+			return "", errors.New("unable to retrieve redirect url for new mobile url")
+		}
+		return *urlR.url, nil
+	default:
+		if err != nil {
+			return "", errors.Wrap(err, "failed to get redirect url")
+		}
+		return "", errors.New("new mobile url is supposed to have redirects")
+	}
+
 }
 
 // IsURL is a shorthand for IsURL(url, sc.StripMobilePrefix, sc.ConvertFirebaseURLs)

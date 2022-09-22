@@ -62,6 +62,10 @@ func IsMobileURL(u string) bool {
 	return len(mobileURLRegex.FindAllString(u, -1)) > 0
 }
 
+func IsNewMobileURL(u string) bool {
+	return strings.Index(u, "https://on.soundcloud.com/") == 0
+}
+
 func replaceUnicodeChars(str string) (string, error) {
 	for _, match := range unicodeRegex.FindAllString(str, -1) {
 		s, err := strconv.Unquote("'" + match + "'")
