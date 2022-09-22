@@ -1,6 +1,7 @@
 package soundcloudapi_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -94,6 +95,10 @@ func getLikes(options soundcloudapi.GetLikesOptions) ([]soundcloudapi.Like, erro
 }
 
 func TestGetLikesBulk(t *testing.T) {
+	// Skip this test on CI since it will github actions up
+	if os.Getenv("CI") != "" {
+		return
+	}
 	actualLimit := 2000
 	options := soundcloudapi.GetLikesOptions{
 		ProfileURL: "https://soundcloud.com/dasc2000",
