@@ -29,6 +29,7 @@ func FetchClientID() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to fetch SoundCloud Client ID")
 	}
+	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

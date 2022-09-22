@@ -1,6 +1,7 @@
 package soundcloudapi_test
 
 import (
+	"net/url"
 	"os"
 	"testing"
 
@@ -106,6 +107,8 @@ func TestGetLikesBulk(t *testing.T) {
 		Type:       "track",
 	}
 
+	likesMap := map[string]struct{}{}
+
 	i := 0
 	for {
 		likes, err := api.GetLikes(options)
@@ -114,17 +117,32 @@ func TestGetLikesBulk(t *testing.T) {
 			return
 		}
 
-		_, err = likes.GetLikes()
+		l, err := likes.GetLikes()
 		if err != nil {
 			t.Error(err.Error())
 			return
+		}
+
+		for _, like := range l {
+			if like.Track.Kind != "" {
+				_, exists := likesMap[like.Track.Title]
+				if !exists {
+					likesMap[like.Track.Title] = struct{}{}
+					i++
+				}
+			}
 		}
 
 		if likes.NextHref == "" {
 			return
 		}
 
-		options.Offset = likes.NextHref
+		u, err := url.Parse(likes.NextHref)
+		if err != nil {
+			panic(err)
+		}
+		offset := u.Query().Get("offset")
+		options.Offset = offset
 		if i >= actualLimit {
 			return
 		}

@@ -69,6 +69,7 @@ func (c *client) makeRequest(method, url string, jsonBody interface{}) ([]byte, 
 	if err != nil {
 		return nil, err
 	}
+	defer res.Body.Close()
 
 	if res.StatusCode < 200 || res.StatusCode > 299 {
 		if data, err := ioutil.ReadAll(res.Body); err == nil {
@@ -263,6 +264,7 @@ func (c *client) downloadProgressive(url string, dst io.Writer) error {
 	if err != nil {
 		return err
 	}
+	defer res.Body.Close()
 
 	if res.StatusCode < 200 || res.StatusCode > 299 {
 		if data, err := ioutil.ReadAll(res.Body); err == nil {
@@ -383,6 +385,7 @@ func (c *client) downloadHLSSegment(url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer res.Body.Close()
 
 	if res.StatusCode < 200 || res.StatusCode > 299 {
 		if data, err := ioutil.ReadAll(res.Body); err == nil {
