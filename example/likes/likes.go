@@ -19,7 +19,6 @@ func main() {
 	query, err := sc.GetLikes(soundcloudapi.GetLikesOptions{
 		ProfileURL: "https://soundcloud.com/dlfsldkjf",
 		Limit:      100,
-		Offset:     0,
 		Type:       "track",
 	})
 

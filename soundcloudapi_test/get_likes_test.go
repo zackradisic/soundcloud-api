@@ -92,3 +92,36 @@ func getLikes(options soundcloudapi.GetLikesOptions) ([]soundcloudapi.Like, erro
 
 	return likes, nil
 }
+
+func TestGetLikesBulk(t *testing.T) {
+	actualLimit := 2000
+	options := soundcloudapi.GetLikesOptions{
+		ProfileURL: "https://soundcloud.com/dasc2000",
+		Limit:      1000,
+		Type:       "track",
+	}
+
+	i := 0
+	for {
+		likes, err := api.GetLikes(options)
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		_, err = likes.GetLikes()
+		if err != nil {
+			t.Error(err.Error())
+			return
+		}
+
+		if likes.NextHref == "" {
+			return
+		}
+
+		options.Offset = likes.NextHref
+		if i >= actualLimit {
+			return
+		}
+	}
+}

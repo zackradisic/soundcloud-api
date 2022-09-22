@@ -579,8 +579,9 @@ type GetLikesOptions struct {
 	ProfileURL string // URL to the user's profile (will use this or ID to choose user)
 	ID         int64  //  User's ID if you have it
 	Limit      int    // How many tracks to return (defaults to 10)
-	Offset     int    // How many tracks to offset by (used for pagination; defaults to 0)
-	Type       string // What type of resource to return. One of ["track", "playlist", "all"]. Defaults to "all"
+	// This is for pagination. It should be the value of PaginatedQuery.NextHref or an empty string for no pagination
+	Offset string
+	Type   string // What type of resource to return. One of ["track", "playlist", "all"]. Defaults to "all"
 }
 
 func (c *client) getLikes(options GetLikesOptions) (*PaginatedQuery, error) {
@@ -603,10 +604,6 @@ func (c *client) getLikes(options GetLikesOptions) (*PaginatedQuery, error) {
 		options.Limit = 10
 	}
 
-	if options.Offset == 0 {
-		options.Offset = 0
-	}
-
 	if options.Type == "" {
 		options.Type = "all"
 	}
@@ -619,10 +616,16 @@ func (c *client) getLikes(options GetLikesOptions) (*PaginatedQuery, error) {
 		options.Type = "likes"
 	}
 
-	u, err = c.buildURL(usersURL+strconv.FormatInt(options.ID, 10)+"/"+options.Type, true, "limit", strconv.Itoa(options.Limit), "offset", strconv.Itoa(options.Offset))
+	if options.Offset == "" {
+		u, err = c.buildURL(usersURL+strconv.FormatInt(options.ID, 10)+"/"+options.Type, true, "limit", strconv.Itoa(options.Limit))
+	} else {
+		u, err = c.buildURL(usersURL+strconv.FormatInt(options.ID, 10)+"/"+options.Type, true, "limit", strconv.Itoa(options.Limit), "offset", options.Offset)
+	}
+
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to build URL for getLikes()")
 	}
+
 	data, err := c.makeRequest("GET", u, nil)
 
 	if err != nil {
