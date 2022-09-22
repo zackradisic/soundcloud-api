@@ -22,7 +22,7 @@ func TestGetDownloadURL(t *testing.T) {
 func TestGetDownloadURLPublic(t *testing.T) {
 	// This track has a public download URL link
 	trackInfo, err := api.GetTrackInfo(soundcloudapi.GetTrackInfoOptions{
-		URL: "https://soundcloud.com/moccioso/01_wav?in=moccioso/sets/download-converter-test",
+		URL: "https://soundcloud.com/taliya-jenkins/double-cheese-burger-hold-the",
 	})
 	if err != nil {
 		t.Error(err.Error())
@@ -34,7 +34,7 @@ func TestGetDownloadURLPublic(t *testing.T) {
 		return
 	}
 
-	dlURL, err := api.GetDownloadURL("https://soundcloud.com/moccioso/01_wav?in=moccioso/sets/download-converter-test", "")
+	dlURL, err := api.GetDownloadURL("https://soundcloud.com/taliya-jenkins/double-cheese-burger-hold-the", "")
 	if err != nil {
 		t.Error(err.Error())
 		return
