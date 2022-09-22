@@ -201,7 +201,7 @@ func (sc *API) prepareURL(url string) (string, error) {
 
 	if IsNewMobileURL(url) {
 		var err error
-		url, err = sc.convertNewMobileURL(url)
+		url, err = sc.ConvertNewMobileURL(url)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to convert new mobile url")
 		}
@@ -210,7 +210,7 @@ func (sc *API) prepareURL(url string) (string, error) {
 	return url, nil
 }
 
-func (sc *API) convertNewMobileURL(url string) (string, error) {
+func (sc *API) ConvertNewMobileURL(url string) (string, error) {
 	client := new(http.Client)
 	type urlResp struct {
 		url *string
