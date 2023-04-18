@@ -45,6 +45,18 @@ func TestGetDownloadURLPublic(t *testing.T) {
 	}
 }
 
+func TestGetStreamURL(t *testing.T) {
+	dlURL, err := api.GetStreamURL("https://soundcloud.com/taliya-jenkins/double-cheese-burger-hold-the", "progressive")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	if !strings.Contains(dlURL, "sndcdn.com/") {
+		t.Errorf("Invalid download URL returned, received: (%s)", dlURL)
+	}
+}
+
 func TestGetDownloadURLNewLink(t *testing.T) {
 	// This track has a public download URL link
 	trackInfo, err := api.GetTrackInfo(soundcloudapi.GetTrackInfoOptions{

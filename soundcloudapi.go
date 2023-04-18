@@ -133,53 +133,48 @@ func (sc *API) GetUser(options GetUserOptions) (User, error) {
 // If the track has a publicly available download link, that link will be preferred and the streamType parameter will be ignored.
 // streamType can be either "hls" or "progressive", defaults to "progressive"
 func (sc *API) GetDownloadURL(url string, streamType string) (string, error) {
-	url, err := sc.prepareURL(url)
+	track, err := sc.getTrack(url)
 	if err != nil {
 		return "", err
 	}
+
+	if track.Downloadable && track.HasDownloadsLeft {
+		downloadURL, err := sc.client.getDownloadURL(track.ID)
+		if err != nil {
+			return "", err
+		}
+		return downloadURL, nil
+	}
+
+	return sc.GetStreamURL(url, streamType)
+}
+
+func (sc *API) GetStreamURL(url string, streamType string) (string, error) {
+	track, err := sc.getTrack(url)
+	if err != nil {
+		return "", err
+	}
+
 	streamType = strings.ToLower(streamType)
 	if streamType == "" {
 		streamType = "progressive"
 	}
 
-	if IsURL(url, false, false) && !IsPlaylistURL(url) {
-		info, err := sc.client.getTrackInfo(GetTrackInfoOptions{
-			URL: url,
-		})
-
-		if err != nil {
-			return "", err
-		}
-
-		if len(info) == 0 {
-			return "", errors.New("Could not find a track with that URL")
-		}
-
-		if info[0].Downloadable && info[0].HasDownloadsLeft {
-			downloadURL, err := sc.client.getDownloadURL(info[0].ID)
+	for _, transcoding := range track.Media.Transcodings {
+		if strings.ToLower(transcoding.Format.Protocol) == streamType {
+			mediaURL, err := sc.client.getMediaURL(transcoding.URL)
 			if err != nil {
 				return "", err
 			}
-			return downloadURL, nil
+			return mediaURL, nil
 		}
-
-		for _, transcoding := range info[0].Media.Transcodings {
-			if strings.ToLower(transcoding.Format.Protocol) == streamType {
-				mediaURL, err := sc.client.getMediaURL(transcoding.URL)
-				if err != nil {
-					return "", err
-				}
-				return mediaURL, nil
-			}
-		}
-
-		mediaURL, err := sc.client.getMediaURL(info[0].Media.Transcodings[0].URL)
-		if err != nil {
-			return "", err
-		}
-		return mediaURL, nil
 	}
-	return "", errors.New("URL is not a track URL")
+
+	mediaURL, err := sc.client.getMediaURL(track.Media.Transcodings[0].URL)
+	if err != nil {
+		return "", err
+	}
+	return mediaURL, nil
 }
 
 func (sc *API) prepareURL(url string) (string, error) {
@@ -208,6 +203,29 @@ func (sc *API) prepareURL(url string) (string, error) {
 	}
 
 	return url, nil
+}
+
+func (sc *API) getTrack(url string) (Track, error) {
+	url, err := sc.prepareURL(url)
+	if err != nil {
+		return Track{}, err
+	}
+
+	if IsURL(url, false, false) && !IsPlaylistURL(url) {
+		info, err := sc.client.getTrackInfo(GetTrackInfoOptions{
+			URL: url,
+		})
+
+		if err != nil {
+			return Track{}, err
+		}
+
+		if len(info) == 1 {
+			return info[0], nil
+		}
+	}
+
+	return Track{}, errors.New("Could not find a track with that URL")
 }
 
 func (sc *API) ConvertNewMobileURL(url string) (string, error) {
